@@ -8,4 +8,16 @@ Repository structure for a .NET Movie API.
 - `scripts/` contains the verification script used locally and in GitHub Actions.
 - `AGENTS.md` contains instructions for Codex.
 
-Add a `.sln` or `.slnx` file at the repository root and include the application and test projects. Then run `pwsh -File scripts/verify.ps1` from the repository root. The script restores dependencies, builds in Release configuration, and runs the tests. If the solution is missing, the script reports that it skipped the checks. CI treats build warnings as errors.
+Run `pwsh -File scripts/verify.ps1` from the repository root to restore dependencies, build in Release configuration, and run the tests. CI treats build warnings as errors.
+
+## Local database
+
+Run these commands from the repository root to create or update the SQLite development database:
+
+```powershell
+dotnet tool restore
+Set-Location src/MovieApi
+dotnet ef database update
+```
+
+The commands apply the migrations in order and create `src/MovieApi/movieapi.db`. Each movie can have one details record, multiple reviews, and multiple actors. EF Core manages the `MovieActor` join table through the movie and actor navigation properties.

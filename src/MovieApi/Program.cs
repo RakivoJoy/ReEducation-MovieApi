@@ -1,8 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using MovieApi.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddDbContext<MovieDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("MovieApi")
+        ?? throw new InvalidOperationException("The MovieApi connection string is required.");
+    options.UseSqlite(connectionString);
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
