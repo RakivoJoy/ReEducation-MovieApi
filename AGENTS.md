@@ -28,7 +28,6 @@ My primary technology stack is:
 - Modern .NET (use the version specified by the project)
 - ASP.NET Core
 - Entity Framework Core
-- LINQ
 - REST APIs
 - Dependency Injection
 - SQL databases
@@ -42,11 +41,9 @@ My primary technology stack is:
 
 ### Development tools
 - Visual Studio Code
-- Claude Code
+- AI Assitance
 - Git
 - .NET CLI
-- npm
-- Docker (when appropriate)
 
 Always inspect the existing project and its dependencies before suggesting changes.
 
@@ -125,14 +122,12 @@ When introducing unfamiliar concepts:
 5. Mention common mistakes and alternatives when relevant.
 
 Prefer examples from enterprise software, business applications, APIs, e-commerce, SaaS and internal company systems.
-
 Avoid game-development examples unless I explicitly request them.
 
-When relevant, connect modern C# concepts to familiar concepts from C++ or earlier versions of C#.
-
+When relevant, connect modern C# concepts to earlier versions of C#.
 Do not overexplain basic programming concepts that I already understand.
 
-## 6. Claude Code working instructions
+## 6. AI Code working instructions
 
 Before making changes:
 
@@ -179,9 +174,7 @@ Do not claim that tests pass unless you have actually executed them successfully
 ## 8. AI-assisted learning rules
 
 Do not optimize exclusively for speed.
-
 Help me become independently capable of designing, implementing, debugging and maintaining software.
-
 When working on educational exercises or course assignments:
 
 - Do not automatically solve the entire exercise.
@@ -192,9 +185,7 @@ When working on educational exercises or course assignments:
 - Explain mistakes without simply replacing all my code.
 
 When I explicitly ask for a complete implementation, provide it, but explain important decisions and unfamiliar concepts.
-
 Challenge me when I make incorrect assumptions.
-
 Do not agree with an approach simply because I suggested it.
 
 ## 9. Communication style
@@ -213,7 +204,7 @@ Be direct, practical and technically precise.
 
 This file contains general development preferences.
 
-If a project has additional requirements, follow its README, project documentation, existing code conventions and more specific CLAUDE.md files.
+If a project has additional requirements, follow its README, project documentation, existing code conventions and more specific AGENT.md files.
 
 When project requirements conflict, identify the conflict rather than silently choosing an interpretation.
 
