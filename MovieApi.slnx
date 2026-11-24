@@ -2,4 +2,8 @@
   <Folder Name="/src/">
     <Project Path="src/MovieApi/MovieApi.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MovieApi.IntegrationTests/MovieApi.IntegrationTests.csproj" />
+    <Project Path="tests/MovieApi.UnitTests/MovieApi.UnitTests.csproj" />
+  </Folder>
 </Solution>

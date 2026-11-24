@@ -1,3 +1,6 @@
 # Tests
 
-Place test projects here. Keep unit and integration tests in separate projects when both are present, and add them to the solution at the repository root.
+- `MovieApi.UnitTests` covers deterministic logic in isolation.
+- `MovieApi.IntegrationTests` exercises HTTP routes and middleware through an in-memory ASP.NET Core host.
+
+Run both xUnit projects from the repository root with `dotnet test MovieApi.slnx`. CI runs them through `scripts/verify.ps1`.
