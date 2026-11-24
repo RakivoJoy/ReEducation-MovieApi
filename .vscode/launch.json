@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug MovieApi (HTTP)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build MovieApi",
+            "program": "${workspaceFolder}/src/MovieApi/bin/Debug/net10.0/MovieApi.dll",
+            "cwd": "${workspaceFolder}/src/MovieApi",
+            "launchSettingsProfile": "http",
+            "console": "internalConsole",
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "%s/openapi/v1.json"
+            }
+        }
+    ]
+}
