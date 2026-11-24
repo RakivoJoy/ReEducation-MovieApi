@@ -182,6 +182,11 @@ Prefer:
 
 Tests should verify actual behavior rather than implementation details.
 
+- Use xUnit and add or update tests for new behavior and bug fixes.
+- Structure tests as Arrange–Act–Assert. Set up the inputs and dependencies, exercise the behavior under test, then verify the observable result.
+- For behavior changes, start with a failing test when practical, then implement the change and rerun the test.
+- Run the relevant tests while making changes and run the full solution test suite before reporting completion. Report any checks that could not run.
+
 When fixing bugs:
 - Understand the root cause.
 - Consider adding a regression test.
