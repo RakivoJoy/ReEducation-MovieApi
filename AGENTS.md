@@ -129,6 +129,24 @@ Do not overexplain basic programming concepts that I already understand.
 
 ## 6. AI Code working instructions
 
+### Git branch policy
+
+- Always work in a feature branch. Never make, commit, or push changes directly on `main`.
+- Before starting any change, create a branch from an up-to-date `main` branch.
+- Treat `main` as protected: changes must reach it only through a reviewed pull request.
+- Never merge a feature branch locally into `main`, bypass branch protection, or push directly to `main`.
+- Keep each branch focused on one feature, fix, documentation change, or refactoring task.
+
+Use these branch naming conventions:
+
+- `feature/<short-description>` for new functionality.
+- `fix/<short-description>` for bug fixes.
+- `docs/<short-description>` for documentation-only changes.
+- `refactor/<short-description>` for maintainability-focused refactoring.
+- `test/<short-description>` for test additions or improvements.
+
+Use lowercase words separated by hyphens, for example `feature/movie-search-api` or `fix/list-pagination`.
+
 Before making changes:
 
 - Inspect the relevant files.
