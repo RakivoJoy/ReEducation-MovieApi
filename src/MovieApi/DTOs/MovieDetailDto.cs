@@ -8,4 +8,4 @@ public sealed record MovieDetailDto(
     int Duration,
     MovieDetailsDto? Details,
     List<ReviewDto> Reviews,
-    List<ActorDto> Actors);
+    List<MovieCastMemberDto> Actors);

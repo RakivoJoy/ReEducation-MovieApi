@@ -63,7 +63,8 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
                 movie.Reviews.OrderBy(review => review.Id)
                     .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating)).ToList(),
                 movie.Cast.OrderBy(castMember => castMember.ActorId)
-                    .Select(castMember => new ActorDto(castMember.ActorId, castMember.Actor.Name, castMember.Actor.BirthYear)
+                    .Select(castMember => new MovieCastMemberDto(
+                        castMember.ActorId, castMember.Actor.Name, castMember.Actor.BirthYear)
                     {
                         Role = castMember.Role
                     }).ToList()))

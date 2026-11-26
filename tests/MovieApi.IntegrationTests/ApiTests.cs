@@ -78,6 +78,22 @@ public class ApiTests(WebApplicationFactory<WeatherForecastController> factory)
         Assert.True(paths.GetProperty("/WeatherForecast").TryGetProperty("get", out _));
     }
 
+    [Fact]
+    public async Task OpenApiSeparatesActorAndMovieCastSchemas()
+    {
+        // Arrange
+        using var client = CreateClient(factory);
+
+        // Act
+        using var document = await client.GetFromJsonAsync<JsonDocument>("/openapi/v1.json");
+
+        // Assert
+        Assert.NotNull(document);
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+        Assert.False(schemas.GetProperty("ActorDto").GetProperty("properties").TryGetProperty("role", out _));
+        Assert.True(schemas.GetProperty("MovieCastMemberDto").GetProperty("properties").TryGetProperty("role", out _));
+    }
+
     [Theory]
     [InlineData("/")]
     [InlineData("/openapi/v1.json")]

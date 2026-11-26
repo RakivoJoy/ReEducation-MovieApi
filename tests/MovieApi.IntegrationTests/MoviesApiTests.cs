@@ -20,6 +20,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     : IClassFixture<WebApplicationFactory<WeatherForecastController>>
 {
     private const string Route = "/api/movies";
+    private static readonly string[] ActorJsonProperties = ["birthYear", "id", "name"];
 
     [Fact]
     public async Task GetMoviesReturnsEmptyListForEmptyCatalog()
@@ -327,6 +328,36 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
         Assert.NotNull(after);
         Assert.Equal("Lead", Assert.Single(after.Actors, item => item.Id == actor.Id).Role);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("/details")]
+    public async Task MovieCastJsonIncludesOnlyAssignedRoles(string routeSuffix)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+        var actor = Assert.Single(movie.Actors);
+        var detailsRoute = $"{Route}/{movie.Id}{routeSuffix}";
+
+        // Act
+        var before = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
+        using var saved = await client.PostAsJsonAsync($"{Route}/{movie.Id}/actors/{actor.Id}", new { Role = "Lead" });
+        var after = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
+        var actorJson = await client.GetFromJsonAsync<JsonElement>($"/api/actors/{actor.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
+        var castMember = Assert.Single(after.GetProperty("actors").EnumerateArray());
+        Assert.False(Assert.Single(before.GetProperty("actors").EnumerateArray()).TryGetProperty("role", out _));
+        Assert.Equal(actor.Id, castMember.GetProperty("id").GetInt32());
+        Assert.Equal(actor.Name, castMember.GetProperty("name").GetString());
+        Assert.Equal(actor.BirthYear, castMember.GetProperty("birthYear").GetInt32());
+        Assert.Equal("Lead", castMember.GetProperty("role").GetString());
+        Assert.Equal(ActorJsonProperties, actorJson.EnumerateObject().Select(property => property.Name).Order());
     }
 
     [Theory]
