@@ -29,7 +29,7 @@ public class ActorsController(MovieDbContext context) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ActorDto>> PostActor(ActorWriteDto request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ActorDto>> PostActor(ActorCreateDto request, CancellationToken cancellationToken)
     {
         var actor = new Actor { Name = request.Name, BirthYear = request.BirthYear };
         context.Actors.Add(actor);
@@ -39,7 +39,7 @@ public class ActorsController(MovieDbContext context) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> PutActor(int id, ActorWriteDto request, CancellationToken cancellationToken)
+    public async Task<IActionResult> PutActor(int id, ActorUpdateDto request, CancellationToken cancellationToken)
     {
         var updated = await context.Actors.Where(actor => actor.Id == id)
             .ExecuteUpdateAsync(setters => setters

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MovieApi.DTOs;
 
-public sealed class ActorWriteDto
+public sealed class ActorUpdateDto
 {
     [Required]
     [StringLength(200)]
