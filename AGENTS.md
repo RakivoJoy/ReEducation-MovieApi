@@ -131,11 +131,12 @@ Do not overexplain basic programming concepts that I already understand.
 
 ### Git branch policy
 
-- Always work in a feature branch. Never make, commit, or push changes directly on `main`.
-- Before starting any change, create a branch from an up-to-date `main` branch.
+- Work on a non-`main` branch. Never make, commit, or push changes directly on `main`.
+- If you are already on a non-`main` branch, check whether its scope fits the task before creating another branch. Reuse a suitable branch for related work across multiple commits and development sessions.
+- Create a branch from an up-to-date `main` when starting work on `main` or when starting distinct or substantial work outside the current branch's scope.
 - Treat `main` as protected: changes must reach it only through a reviewed pull request.
 - Never merge a feature branch locally into `main`, bypass branch protection, or push directly to `main`.
-- Keep each branch focused on one feature, fix, documentation change, or refactoring task.
+- Keep each branch focused on a coherent feature, fix, documentation effort, or refactoring. Include related follow-up changes on the same branch.
 
 Use these branch naming conventions:
 
