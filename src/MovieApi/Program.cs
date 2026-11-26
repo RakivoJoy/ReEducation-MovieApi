@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
+using MovieApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,4 +31,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.SeedData();
 app.Run();

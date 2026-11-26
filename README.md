@@ -21,3 +21,5 @@ dotnet ef database update
 ```
 
 The commands apply the migrations in order and create `src/MovieApi/movieapi.db`. Each movie can have one details record, multiple reviews, and multiple actors. EF Core manages the `MovieActor` join table through the movie and actor navigation properties.
+
+Starting the API with the `http` or `https` launch profile applies pending migrations and fills an empty movie catalog with demo films, details, reviews, and actors. An existing movie catalog is left intact on startup. To skip startup initialization for a local profile, set its `SeedData__Enabled` environment variable to `false`.
