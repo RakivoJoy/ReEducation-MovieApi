@@ -32,7 +32,7 @@ public class ApiTests(WebApplicationFactory<WeatherForecastController> factory)
     }
 
     [Fact]
-    public async Task RootRedirectsToOpenApiInDevelopment()
+    public async Task RootRedirectsToSwaggerUiInDevelopment()
     {
         // Arrange: The test host defaults to Development. The client exposes redirects.
         using var client = CreateClient(factory);
@@ -43,7 +43,23 @@ public class ApiTests(WebApplicationFactory<WeatherForecastController> factory)
         // Assert: HTTP 302 and the Location header together describe the redirect.
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         // The null-conditional operator lets a missing Location header produce an assertion failure.
-        Assert.Equal("/openapi/v1.json", response.Headers.Location?.OriginalString);
+        Assert.Equal("/swagger/index.html", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task SwaggerUiUsesTheBuiltInOpenApiDocument()
+    {
+        // Arrange
+        using var client = CreateClient(factory);
+
+        // Act
+        using var response = await client.GetAsync("/swagger/index.html");
+        var script = await client.GetStringAsync("/swagger/index.js");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("/openapi/v1.json", script);
     }
 
     [Fact]
@@ -62,9 +78,10 @@ public class ApiTests(WebApplicationFactory<WeatherForecastController> factory)
         Assert.True(paths.GetProperty("/WeatherForecast").TryGetProperty("get", out _));
     }
 
-    [Theory] 
+    [Theory]
     [InlineData("/")]
     [InlineData("/openapi/v1.json")]
+    [InlineData("/swagger/index.html")]
     public async Task DevelopmentRoutesReturnNotFoundInProduction(string path)
     {
         // Arrange: Create a separate factory so the Production environment applies to this host only.

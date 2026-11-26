@@ -4,3 +4,18 @@ GET {{MovieApi_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{MovieApi_HostAddress}}/api/movies
+Accept: application/json
+
+###
+
+POST {{MovieApi_HostAddress}}/api/movies
+Content-Type: application/json
+
+{
+  "title": "Arrival",
+  "year": 2016,
+  "genre": "Science fiction",
+  "duration": 116
+}
