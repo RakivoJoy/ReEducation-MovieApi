@@ -107,20 +107,20 @@ public class MoviesController(MovieDbContext context) : ControllerBase
             {
                 return NotFound();
             }
+
+            return StatusCode(StatusCodes.Status201Created);
         }
-        else
+
+        // Only fill in a legacy role if another request has not already set it.
+        var updated = await context.MovieActors
+            .Where(member => member.MovieId == movieId && member.ActorId == actorId && member.Role == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(member => member.Role, request.Role), cancellationToken);
+        if (updated == 0)
         {
-            // Only fill in a legacy role if another request has not already set it.
-            var updated = await context.MovieActors
-                .Where(member => member.MovieId == movieId && member.ActorId == actorId && member.Role == null)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(member => member.Role, request.Role), cancellationToken);
-            if (updated == 0)
-            {
-                return await context.MovieActors.AnyAsync(
-                    member => member.MovieId == movieId && member.ActorId == actorId, cancellationToken)
-                    ? Conflict()
-                    : NotFound();
-            }
+            return await context.MovieActors.AnyAsync(
+                member => member.MovieId == movieId && member.ActorId == actorId, cancellationToken)
+                ? Conflict()
+                : NotFound();
         }
 
         return NoContent();
