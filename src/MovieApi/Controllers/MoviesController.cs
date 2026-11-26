@@ -14,12 +14,41 @@ namespace MovieApi.Controllers;
 public class MoviesController(MovieDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(
+        [FromQuery] string? genre, [FromQuery] int? year, [FromQuery] string? actor,
+        CancellationToken cancellationToken)
     {
+        IQueryable<Movie> movies = context.Movies;
+        if (!string.IsNullOrWhiteSpace(genre))
+        {
+            movies = movies.Where(movie => movie.Genre == genre);
+        }
+
+        if (year.HasValue)
+        {
+            movies = movies.Where(movie => movie.Year == year.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(actor))
+        {
+            movies = movies.Where(movie => movie.Actors.Any(castMember => castMember.Name == actor));
+        }
+
         // Project to the summary DTO so the query selects only the catalog fields.
-        return await context.Movies
+        return await movies
             .Select(movie => new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration))
             .ToListAsync(cancellationToken);
+    }
+
+    [HttpGet("{id:int}/details")]
+    public async Task<ActionResult<MovieDetailsDto>> GetMovieDetails(int id, CancellationToken cancellationToken)
+    {
+        var details = await context.MovieDetails
+            .Where(details => details.MovieId == id)
+            .Select(details => new MovieDetailsDto(details.Id, details.Synopsis, details.Language, details.Budget))
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return details is null ? NotFound() : details;
     }
 
     [HttpGet("{id:int}")]

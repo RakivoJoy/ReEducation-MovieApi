@@ -180,6 +180,98 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
 
+    [Theory]
+    [InlineData("genre=Science+fiction&year=2016&actor=Amy+Adams", true)]
+    [InlineData("genre=Science+fiction&year=2016&actor=Tom+Hanks", false)]
+    [InlineData("genre=Drama&year=2016&actor=Amy+Adams", false)]
+    [InlineData("genre=Science+fiction&year=2022&actor=Amy+Adams", false)]
+    public async Task GetMoviesCombinesFilters(string query, bool expectedMatch)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+
+        // Act
+        var movies = await client.GetFromJsonAsync<MovieDto[]>($"{Route}?{query}");
+
+        // Assert
+        Assert.NotNull(movies);
+        Assert.Equal(expectedMatch ? new[] { movie.Id } : [], movies.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task GetMovieDetailsReturnsTheDetailsRecord()
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+
+        // Act
+        var details = await client.GetFromJsonAsync<MovieDetailsDto>($"{Route}/{movie.Id}/details");
+        using var missing = await client.GetAsync($"{Route}/{movie.Id + 1}/details");
+
+        // Assert
+        Assert.Equal(movie.Details!.Synopsis, details?.Synopsis);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Fact]
+    public async Task ActorCanBeCreatedUpdatedAndListed()
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        const string actorsRoute = "/api/actors";
+
+        // Act
+        using var created = await client.PostAsJsonAsync(actorsRoute, new { Name = "Tom Hanks", BirthYear = 1956 });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var location = Assert.IsType<Uri>(created.Headers.Location, exactMatch: false);
+        var actor = await client.GetFromJsonAsync<ActorDto>(location);
+        using var updated = await client.PutAsJsonAsync(location, new { Name = "Thomas Hanks", BirthYear = 1956 });
+        var actors = await client.GetFromJsonAsync<ActorDto[]>(actorsRoute);
+
+        // Assert
+        Assert.Equal("Tom Hanks", actor?.Name);
+        Assert.Equal(HttpStatusCode.NoContent, updated.StatusCode);
+        Assert.Equal("Thomas Hanks", Assert.Single(actors!).Name);
+    }
+
+    [Fact]
+    public async Task ReviewCanBeCreatedListedAndDeleted()
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+        var reviewsRoute = $"{Route}/{movie.Id}/reviews";
+        var request = new { ReviewerName = "Robin", Comment = "Engaging", Rating = 4 };
+
+        // Act
+        using var missingMovie = await client.PostAsJsonAsync($"{Route}/{movie.Id + 1}/reviews", request);
+        using var created = await client.PostAsJsonAsync(reviewsRoute, request);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var location = created.Headers.Location;
+        Assert.NotNull(location);
+        var review = await client.GetFromJsonAsync<ReviewDto>(location);
+        var reviews = await client.GetFromJsonAsync<ReviewDto[]>(reviewsRoute);
+        using var deleted = await client.DeleteAsync(location);
+        using var missingReview = await client.GetAsync(location);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, missingMovie.StatusCode);
+        Assert.Equal(4, review?.Rating);
+        Assert.Contains(review!, reviews!);
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missingReview.StatusCode);
+    }
+
     private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");
 
     private async Task<WebApplicationFactory<WeatherForecastController>> CreateAppAsync(SqliteConnection connection)
