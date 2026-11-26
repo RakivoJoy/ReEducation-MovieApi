@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MovieApi.Controllers;
 using MovieApi.Data;
+using MovieApi.DTOs;
 using MovieApi.Models;
 using Xunit;
 
@@ -69,7 +70,7 @@ public class SeedDataTests(WebApplicationFactory<WeatherForecastController> fact
         Assert.Equal("Amy Adams", sharedActor.Name);
     }
 
-    private async Task<Movie[]> StartAndReadCatalogAsync(SqliteConnection connection)
+    private async Task<MovieDto[]> StartAndReadCatalogAsync(SqliteConnection connection)
     {
         using var app = factory.WithWebHostBuilder(builder =>
         {
@@ -82,7 +83,7 @@ public class SeedDataTests(WebApplicationFactory<WeatherForecastController> fact
             });
         });
         using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
-        return await client.GetFromJsonAsync<Movie[]>("/api/movies")
+        return await client.GetFromJsonAsync<MovieDto[]>("/api/movies")
             ?? throw new InvalidOperationException("The movie catalog response was empty.");
     }
 }

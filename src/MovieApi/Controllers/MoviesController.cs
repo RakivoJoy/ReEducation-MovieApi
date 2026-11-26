@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
+using MovieApi.DTOs;
 using MovieApi.Models;
 
 namespace MovieApi.Controllers;
@@ -13,27 +14,38 @@ namespace MovieApi.Controllers;
 public class MoviesController(MovieDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Movie>>> GetMovies(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(CancellationToken cancellationToken)
     {
-        // AsNoTracking skips EF change tracking for this read-only query.
-        // ToListAsync executes the SQL, using the cancellation token for an aborted request.
-        return await context.Movies.AsNoTracking().ToListAsync(cancellationToken);
+        // Project to the summary DTO so the query selects only the catalog fields.
+        return await context.Movies
+            .Select(movie => new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration))
+            .ToListAsync(cancellationToken);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Movie>> GetMovie(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<MovieDetailDto>> GetMovie(int id, CancellationToken cancellationToken)
     {
-        // The int route constraint matches only integer IDs. A matching row becomes HTTP 200.
-        // ActionResult<Movie> also lets the action return HTTP 404 when the query finds no row.
-        var movie = await context.Movies.AsNoTracking()
-            .SingleOrDefaultAsync(movie => movie.Id == id, cancellationToken);
+        // The DTO projection loads the two collections without exposing EF navigation properties.
+        // Split queries avoid multiplying the review and actor rows in a single join.
+        var movie = await context.Movies
+            .Where(movie => movie.Id == id)
+            .AsSplitQuery()
+            .Select(movie => new MovieDetailDto(
+                movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration,
+                movie.Details == null ? null : new MovieDetailsDto(
+                    movie.Details.Id, movie.Details.Synopsis, movie.Details.Language, movie.Details.Budget),
+                movie.Reviews.OrderBy(review => review.Id)
+                    .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating)).ToList(),
+                movie.Actors.OrderBy(actor => actor.Id)
+                    .Select(actor => new ActorDto(actor.Id, actor.Name, actor.BirthYear)).ToList()))
+            .SingleOrDefaultAsync(cancellationToken);
         return movie is null ? NotFound() : movie;
     }
 
     [HttpPost]
-    public async Task<ActionResult<Movie>> PostMovie(MovieRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<MovieDto>> PostMovie(MovieCreateDto request, CancellationToken cancellationToken)
     {
-        // MovieRequest is the JSON input contract. Copying its fields leaves ID generation
+        // MovieCreateDto is the JSON input contract. Copying its fields leaves ID generation
         // to the database and keeps relationship changes outside this operation.
         var movie = new Movie
         {
@@ -47,11 +59,12 @@ public class MoviesController(MovieDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
 
         // Return HTTP 201 with a Location header generated from the GET action and the new ID.
-        return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
+        var summary = new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration);
+        return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, summary);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> PutMovie(int id, MovieRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> PutMovie(int id, MovieUpdateDto request, CancellationToken cancellationToken)
     {
         // The route supplies the primary key. FindAsync returns a tracked entity so EF can
         // detect changes to its properties when SaveChangesAsync runs.
