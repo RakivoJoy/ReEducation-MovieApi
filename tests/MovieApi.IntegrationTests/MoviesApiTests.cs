@@ -310,6 +310,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         // Act
         using var invalid = await client.PostAsJsonAsync(castRoute, new { Role = "" });
         using var missingActor = await client.PostAsJsonAsync($"{movieRoute}/actors/{actor.Id + 1}", new { Role = "Lead" });
+        using var missingMovie = await client.PostAsJsonAsync($"{Route}/{movie.Id + 1}/actors/{actor.Id}", new { Role = "Lead" });
         using var saved = await client.PostAsJsonAsync(castRoute, new { Role = "Lead" });
         using var duplicate = await client.PostAsJsonAsync(castRoute, new { Role = "Other" });
         var after = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
@@ -321,6 +322,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Null(priorLink?.Role);
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, missingActor.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missingMovie.StatusCode);
         Assert.Equal(existingLink ? HttpStatusCode.NoContent : HttpStatusCode.Created, saved.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
         Assert.NotNull(after);
