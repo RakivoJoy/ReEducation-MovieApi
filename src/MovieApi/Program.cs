@@ -18,14 +18,15 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapGet("/", () => Results.Redirect("/openapi/v1.json")).ExcludeFromDescription();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Movie API v1"));
+    app.MapGet("/", () => Results.Redirect("/swagger/index.html")).ExcludeFromDescription();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
