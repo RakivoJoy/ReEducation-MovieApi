@@ -45,18 +45,14 @@ public class MoviesController(MovieDbContext context) : ControllerBase
     }
 
     [HttpGet("{id:int}/details")]
-    public async Task<ActionResult<MovieDetailsDto>> GetMovieDetails(int id, CancellationToken cancellationToken)
-    {
-        var details = await context.MovieDetails
-            .Where(details => details.MovieId == id)
-            .Select(details => new MovieDetailsDto(details.Id, details.Synopsis, details.Language, details.Budget))
-            .SingleOrDefaultAsync(cancellationToken);
-
-        return details is null ? NotFound() : details;
-    }
+    public Task<ActionResult<MovieDetailDto>> GetMovieDetails(int id, CancellationToken cancellationToken) =>
+        FindMovieDetailAsync(id, cancellationToken);
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<MovieDetailDto>> GetMovie(int id, CancellationToken cancellationToken)
+    public Task<ActionResult<MovieDetailDto>> GetMovie(int id, CancellationToken cancellationToken) =>
+        FindMovieDetailAsync(id, cancellationToken);
+
+    private async Task<ActionResult<MovieDetailDto>> FindMovieDetailAsync(int id, CancellationToken cancellationToken)
     {
         // The DTO projection loads the two collections without exposing EF navigation properties.
         // Split queries avoid multiplying the review and actor rows in a single join.

@@ -202,7 +202,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     }
 
     [Fact]
-    public async Task GetMovieDetailsReturnsTheDetailsRecord()
+    public async Task GetMovieDetailsReturnsMovieWithDetailsActorsAndReviews()
     {
         // Arrange
         await using var connection = CreateConnection();
@@ -211,11 +211,16 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         var movie = await AddMovieWithRelationsAsync(app);
 
         // Act
-        var details = await client.GetFromJsonAsync<MovieDetailsDto>($"{Route}/{movie.Id}/details");
+        var details = await client.GetFromJsonAsync<MovieDetailDto>($"{Route}/{movie.Id}/details");
         using var missing = await client.GetAsync($"{Route}/{movie.Id + 1}/details");
 
         // Assert
-        Assert.Equal(movie.Details!.Synopsis, details?.Synopsis);
+        Assert.NotNull(details);
+        Assert.Equal(movie.Id, details.Id);
+        Assert.Equal(movie.Title, details.Title);
+        Assert.Equal(movie.Details!.Synopsis, details.Details?.Synopsis);
+        Assert.Equal(Assert.Single(movie.Actors).Name, Assert.Single(details.Actors).Name);
+        Assert.Equal(Assert.Single(movie.Reviews).Rating, Assert.Single(details.Reviews).Rating);
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
 
