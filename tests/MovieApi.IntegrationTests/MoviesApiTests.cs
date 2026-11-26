@@ -272,6 +272,56 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Equal(HttpStatusCode.NotFound, missingReview.StatusCode);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PostMovieActorSavesRoleForNewAndExistingLinks(bool existingLink)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+        var actor = Assert.Single(movie.Actors);
+        if (existingLink)
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
+            await database.Database.MigrateAsync("20261124165134_AddMovieActors");
+            await database.Database.MigrateAsync();
+        }
+        else
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
+            actor = new Actor { Name = "Jeremy Renner", BirthYear = 1971 };
+            database.Actors.Add(actor);
+            await database.SaveChangesAsync();
+        }
+        var movieRoute = $"{Route}/{movie.Id}";
+        var castRoute = $"{movieRoute}/actors/{actor.Id}";
+        var before = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
+
+        // Act
+        using var invalid = await client.PostAsJsonAsync(castRoute, new { Role = "" });
+        using var missingActor = await client.PostAsJsonAsync($"{movieRoute}/actors/{actor.Id + 1}", new { Role = "Lead" });
+        using var saved = await client.PostAsJsonAsync(castRoute, new { Role = "Lead" });
+        using var duplicate = await client.PostAsJsonAsync(castRoute, new { Role = "Other" });
+        var after = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
+
+        // Assert
+        Assert.NotNull(before);
+        var priorLink = before.Actors.SingleOrDefault(item => item.Id == actor.Id);
+        Assert.Equal(existingLink, priorLink is not null);
+        Assert.Null(priorLink?.Role);
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missingActor.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.NotNull(after);
+        Assert.Equal("Lead", Assert.Single(after.Actors, item => item.Id == actor.Id).Role);
+    }
+
     private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");
 
     private async Task<WebApplicationFactory<WeatherForecastController>> CreateAppAsync(SqliteConnection connection)

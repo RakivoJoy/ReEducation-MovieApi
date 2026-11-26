@@ -10,4 +10,5 @@ public class Movie
     public MovieDetails? Details { get; set; }
     public ICollection<Review> Reviews { get; } = new List<Review>();
     public ICollection<Actor> Actors { get; } = new List<Actor>();
+    public ICollection<MovieActor> Cast { get; } = new List<MovieActor>();
 }

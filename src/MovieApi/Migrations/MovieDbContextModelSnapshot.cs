@@ -16,21 +16,6 @@ namespace MovieApi.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
-            modelBuilder.Entity("MovieActor", b =>
-                {
-                    b.Property<int>("MovieId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ActorId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("MovieId", "ActorId");
-
-                    b.HasIndex("ActorId");
-
-                    b.ToTable("MovieActor");
-                });
-
             modelBuilder.Entity("MovieApi.Models.Actor", b =>
                 {
                     b.Property<int>("Id")
@@ -72,6 +57,25 @@ namespace MovieApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Movies");
+                });
+
+            modelBuilder.Entity("MovieApi.Models.MovieActor", b =>
+                {
+                    b.Property<int>("MovieId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ActorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("MovieId", "ActorId");
+
+                    b.HasIndex("ActorId");
+
+                    b.ToTable("MovieActor", (string)null);
                 });
 
             modelBuilder.Entity("MovieApi.Models.MovieDetails", b =>
@@ -132,19 +136,23 @@ namespace MovieApi.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MovieActor", b =>
+            modelBuilder.Entity("MovieApi.Models.MovieActor", b =>
                 {
-                    b.HasOne("MovieApi.Models.Actor", null)
+                    b.HasOne("MovieApi.Models.Actor", "Actor")
                         .WithMany()
                         .HasForeignKey("ActorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MovieApi.Models.Movie", null)
-                        .WithMany()
+                    b.HasOne("MovieApi.Models.Movie", "Movie")
+                        .WithMany("Cast")
                         .HasForeignKey("MovieId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Actor");
+
+                    b.Navigation("Movie");
                 });
 
             modelBuilder.Entity("MovieApi.Models.MovieDetails", b =>
@@ -171,6 +179,8 @@ namespace MovieApi.Migrations
 
             modelBuilder.Entity("MovieApi.Models.Movie", b =>
                 {
+                    b.Navigation("Cast");
+
                     b.Navigation("Details");
 
                     b.Navigation("Reviews");

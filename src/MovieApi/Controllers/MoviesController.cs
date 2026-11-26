@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
 using MovieApi.DTOs;
@@ -13,6 +14,9 @@ namespace MovieApi.Controllers;
 [ApiController]
 public class MoviesController(MovieDbContext context) : ControllerBase
 {
+    private const int SqliteForeignKeyViolation = 787;
+    private const int SqlitePrimaryKeyViolation = 1555;
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(
         [FromQuery] string? genre, [FromQuery] int? year, [FromQuery] string? actor,
@@ -65,10 +69,65 @@ public class MoviesController(MovieDbContext context) : ControllerBase
                     movie.Details.Id, movie.Details.Synopsis, movie.Details.Language, movie.Details.Budget),
                 movie.Reviews.OrderBy(review => review.Id)
                     .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating)).ToList(),
-                movie.Actors.OrderBy(actor => actor.Id)
-                    .Select(actor => new ActorDto(actor.Id, actor.Name, actor.BirthYear)).ToList()))
+                movie.Cast.OrderBy(castMember => castMember.ActorId)
+                    .Select(castMember => new ActorDto(castMember.ActorId, castMember.Actor.Name, castMember.Actor.BirthYear)
+                    {
+                        Role = castMember.Role
+                    }).ToList()))
             .SingleOrDefaultAsync(cancellationToken);
         return movie is null ? NotFound() : movie;
+    }
+
+    [HttpPost("{movieId:int}/actors/{actorId:int}")]
+    public async Task<IActionResult> PostMovieActor(
+        int movieId, int actorId, MovieActorCreateDto request, CancellationToken cancellationToken)
+    {
+        if (!await context.Movies.AnyAsync(movie => movie.Id == movieId, cancellationToken) ||
+            !await context.Actors.AnyAsync(actor => actor.Id == actorId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var castMember = await context.MovieActors.FindAsync([movieId, actorId], cancellationToken);
+        if (castMember?.Role is not null)
+        {
+            return Conflict();
+        }
+
+        if (castMember is null)
+        {
+            context.MovieActors.Add(new MovieActor { MovieId = movieId, ActorId = actorId, Role = request.Role });
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception) when (
+                exception.InnerException is SqliteException { SqliteExtendedErrorCode: SqlitePrimaryKeyViolation })
+            {
+                return Conflict();
+            }
+            catch (DbUpdateException exception) when (
+                exception.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteForeignKeyViolation })
+            {
+                return NotFound();
+            }
+        }
+        else
+        {
+            // Only fill in a legacy role if another request has not already set it.
+            var updated = await context.MovieActors
+                .Where(member => member.MovieId == movieId && member.ActorId == actorId && member.Role == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(member => member.Role, request.Role), cancellationToken);
+            if (updated == 0)
+            {
+                return await context.MovieActors.AnyAsync(
+                    member => member.MovieId == movieId && member.ActorId == actorId, cancellationToken)
+                    ? Conflict()
+                    : NotFound();
+            }
+        }
+
+        return NoContent();
     }
 
     [HttpPost]
