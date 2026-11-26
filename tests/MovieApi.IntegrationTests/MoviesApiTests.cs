@@ -321,10 +321,55 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Null(priorLink?.Role);
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, missingActor.StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
+        Assert.Equal(existingLink ? HttpStatusCode.NoContent : HttpStatusCode.Created, saved.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
         Assert.NotNull(after);
         Assert.Equal("Lead", Assert.Single(after.Actors, item => item.Id == actor.Id).Role);
+    }
+
+    [Theory]
+    [InlineData("POST", "/api/actors", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
+    [InlineData("PUT", "/api/actors/1", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
+    [InlineData("POST", "/api/movies/1/reviews", """{"reviewerName":"","rating":6}""", "ReviewerName", "Rating")]
+    public async Task InvalidRequestsReturnValidationErrors(
+        string method, string path, string json, string requiredField, string rangeField)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        using var request = new HttpRequestMessage(new HttpMethod(method), path)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        // Act
+        using var response = await client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var errors = problem.GetProperty("errors");
+        Assert.True(errors.TryGetProperty(requiredField, out _));
+        Assert.True(errors.TryGetProperty(rangeField, out _));
+    }
+
+    [Theory]
+    [InlineData("/api/movies/1")]
+    [InlineData("/api/movies/1/reviews")]
+    [InlineData("/api/actors/1")]
+    public async Task GetMissingResourceReturnsNotFound(string path)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+
+        // Act
+        using var response = await client.GetAsync(path);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");
