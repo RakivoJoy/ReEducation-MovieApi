@@ -1,0 +1,12 @@
+- name: Home
+  href: index.md
+- name: API reference
+  href: api/toc.yml
+- name: Contributor guides
+  items:
+    - name: DocFX
+      href: guides/docfx.md
+    - name: C# comments
+      href: guides/csharp-comments.md
+    - name: Mermaid
+      href: guides/mermaid.md
