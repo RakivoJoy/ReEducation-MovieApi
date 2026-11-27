@@ -41,32 +41,45 @@ public sealed class CastAssignmentService(MovieDbContext context)
         }
 
         var castMember = await context.MovieActors.FindAsync([movieId, actorId], cancellationToken);
-        if (castMember?.Role is not null)
+        if (castMember is null)
+        {
+            return await CreateCastLinkAsync(movieId, actorId, role, cancellationToken);
+        }
+
+        if (castMember.Role is not null)
         {
             return CastAssignmentResult.RoleAlreadyAssigned;
         }
 
-        if (castMember is null)
-        {
-            context.MovieActors.Add(new MovieActor { MovieId = movieId, ActorId = actorId, Role = role });
-            try
-            {
-                await context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException exception) when (
-                exception.InnerException is SqlException { Number: SqlServerPrimaryKeyViolation })
-            {
-                return CastAssignmentResult.RoleAlreadyAssigned;
-            }
-            catch (DbUpdateException exception) when (
-                exception.InnerException is SqlException { Number: SqlServerConstraintViolation })
-            {
-                return CastAssignmentResult.ResourceMissing;
-            }
+        return await FillUnassignedRoleAsync(movieId, actorId, role, cancellationToken);
+    }
 
-            return CastAssignmentResult.Created;
+    private async Task<CastAssignmentResult> CreateCastLinkAsync(
+        int movieId, int actorId, string role, CancellationToken cancellationToken)
+    {
+        context.MovieActors.Add(new MovieActor { MovieId = movieId, ActorId = actorId, Role = role });
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        // Another request can insert the link or delete a parent after the prechecks.
+        catch (DbUpdateException exception) when (
+            exception.InnerException is SqlException { Number: SqlServerPrimaryKeyViolation })
+        {
+            return CastAssignmentResult.RoleAlreadyAssigned;
+        }
+        catch (DbUpdateException exception) when (
+            exception.InnerException is SqlException { Number: SqlServerConstraintViolation })
+        {
+            return CastAssignmentResult.ResourceMissing;
         }
 
+        return CastAssignmentResult.Created;
+    }
+
+    private async Task<CastAssignmentResult> FillUnassignedRoleAsync(
+        int movieId, int actorId, string role, CancellationToken cancellationToken)
+    {
         // The null predicate prevents a concurrent request from overwriting a role.
         var updated = await context.MovieActors
             .Where(member => member.MovieId == movieId && member.ActorId == actorId && member.Role == null)

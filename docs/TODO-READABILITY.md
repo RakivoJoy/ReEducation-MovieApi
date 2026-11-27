@@ -9,7 +9,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Use the [
 | ID | Backlog item | Impact | Confidence | Ease | ICE | Status |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | READ-01 | Make movie read queries easier to scan | 9 | 9 | 8 | 648 | Done |
-| READ-02 | Separate cast assignment decisions from database writes | 9 | 9 | 7 | 567 | Ready |
+| READ-02 | Separate cast assignment decisions from database writes | 9 | 9 | 7 | 567 | Done |
 | READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Ready |
 | READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Ready |
 | READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Ready |
@@ -36,8 +36,12 @@ In [CastAssignmentService](../src/MovieApi/Services/CastAssignmentService.cs), m
 
 **Acceptance criteria**
 
-- [ ] The service entry point reads as a decision about the current cast link, and the SQL Server-specific error handling sits beside the write it interprets.
-- [ ] Existing tests verify 201, 204, 404, and 409 outcomes. Preserve the conditional update and the behavior when a concurrent request inserts a competing link or removes a resource.
+- [x] The service entry point reads as a decision about the current cast link, and the SQL Server-specific error handling sits beside the write it interprets.
+- [x] Existing tests verify 201, 204, 404, and 409 outcomes. Preserve the conditional update and the behavior when a concurrent request inserts a competing link or removes a resource.
+
+**Completion**
+
+Verified create, update, conflict, and missing-resource outcomes, including a new SQL Server test for an actor deleted after the precheck.
 
 ### READ-03 Clarify movie write paths and concurrency handling
 

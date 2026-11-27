@@ -468,6 +468,31 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Equal(assigningCast ? HttpStatusCode.Conflict : HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task PostMovieActorReturnsNotFoundWhenActorDisappearsBeforeInsert()
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        var actor = new Actor { Name = "Amy Adams", BirthYear = 1974 };
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var deleteActor = new BeforeSave(async cancellationToken =>
+        {
+            await database.Actors.Where(candidate => candidate.Id == actor.Id).ExecuteDeleteAsync(cancellationToken);
+        });
+        using var app = await CreateAppAsync(testDatabase, deleteActor);
+        database.AddRange(movie, actor);
+        await database.SaveChangesAsync();
+        using var client = CreateClient(app);
+
+        // Act
+        using var response = await client.PostAsJsonAsync($"{Route}/{movie.Id}/actors/{actor.Id}", new { Role = "Louise" });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Empty(await database.MovieActors.ToListAsync());
+    }
+
     private sealed class BeforeSave(Func<CancellationToken, Task> concurrentWrite) : SaveChangesInterceptor
     {
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
