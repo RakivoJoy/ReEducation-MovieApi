@@ -3,11 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using MovieApi.Controllers;
 using MovieApi.Data;
 using MovieApi.DTOs;
@@ -26,8 +24,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMoviesReturnsEmptyListForEmptyCatalog()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
 
         // Act
@@ -42,8 +40,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMoviesReturnsSummariesWithoutRelatedData()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
@@ -63,8 +61,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMovieReturnsDetailsReviewsAndActors()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
@@ -84,8 +82,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task PostMovieReturnsCreatedWithLocationAndPersistsMovie()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var request = new MovieCreateDto { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
 
@@ -111,8 +109,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task WriteMovieRejectsInvalidFields(string method)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var uri = method == "POST" ? Route : $"{Route}/{movie.Id}";
@@ -138,8 +136,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task PutMovieUpdatesFieldsAndPreservesRelations()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var uri = $"{Route}/{movie.Id}";
@@ -166,8 +164,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task DeleteMovieRemovesExistingMovie()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var uri = $"{Route}/{movie.Id}";
@@ -189,8 +187,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMoviesCombinesFilters(string query, bool expectedMatch)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
@@ -206,8 +204,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMovieDetailsReturnsMovieWithDetailsActorsAndReviews()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
@@ -229,8 +227,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task ActorCanBeCreatedUpdatedAndListed()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         const string actorsRoute = "/api/actors";
 
@@ -252,8 +250,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task ReviewCanBeCreatedListedAndDeleted()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var reviewsRoute = $"{Route}/{movie.Id}/reviews";
@@ -284,19 +282,12 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task PostMovieActorSavesRoleForNewAndExistingLinks(bool existingLink)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var actor = Assert.Single(movie.Actors);
-        if (existingLink)
-        {
-            await using var scope = app.Services.CreateAsyncScope();
-            var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
-            await database.Database.MigrateAsync("20261124165134_AddMovieActors");
-            await database.Database.MigrateAsync();
-        }
-        else
+        if (!existingLink)
         {
             await using var scope = app.Services.CreateAsyncScope();
             var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
@@ -336,8 +327,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task MovieCastJsonIncludesOnlyAssignedRoles(string routeSuffix)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
         var actor = Assert.Single(movie.Actors);
@@ -368,8 +359,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         string method, string path, string json, string requiredField, string rangeField)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
         using var request = new HttpRequestMessage(new HttpMethod(method), path)
         {
@@ -394,8 +385,8 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMissingResourceReturnsNotFound(string path)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
         using var client = CreateClient(app);
 
         // Act
@@ -405,17 +396,64 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");
-
-    private async Task<WebApplicationFactory<WeatherForecastController>> CreateAppAsync(SqliteConnection connection)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PostMapsSqlServerConstraintFailuresAfterAConcurrentWrite(bool assigningCast)
     {
-        // Keep this connection open for the lifetime of the test's private database.
-        await connection.OpenAsync();
-        var app = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var actor = new Actor { Name = "Amy Adams", BirthYear = 1974 };
+        var concurrentWrite = new BeforeSave(async cancellationToken =>
         {
-            services.RemoveAll<IDbContextOptionsConfiguration<MovieDbContext>>();
-            services.AddDbContext<MovieDbContext>(options => options.UseSqlite(connection));
-        }));
+            if (assigningCast)
+            {
+                database.MovieActors.Add(new MovieActor { MovieId = movie.Id, ActorId = actor.Id, Role = "First role" });
+                await database.SaveChangesAsync(cancellationToken);
+            }
+            else
+            {
+                await database.Movies.Where(item => item.Id == movie.Id).ExecuteDeleteAsync(cancellationToken);
+            }
+        });
+        using var app = await CreateAppAsync(testDatabase, concurrentWrite);
+        database.AddRange(movie, actor);
+        await database.SaveChangesAsync();
+        using var client = CreateClient(app);
+
+        // Act
+        using var response = assigningCast
+            ? await client.PostAsJsonAsync($"{Route}/{movie.Id}/actors/{actor.Id}", new { Role = "Second role" })
+            : await client.PostAsJsonAsync($"{Route}/{movie.Id}/reviews", new { ReviewerName = "Alex", Comment = "Review", Rating = 5 });
+
+        // Assert
+        Assert.Equal(assigningCast ? HttpStatusCode.Conflict : HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private sealed class BeforeSave(Func<CancellationToken, Task> concurrentWrite) : SaveChangesInterceptor
+    {
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            await concurrentWrite(cancellationToken);
+            return result;
+        }
+    }
+
+    private async Task<WebApplicationFactory<WeatherForecastController>> CreateAppAsync(
+        SqlServerTestDatabase testDatabase, SaveChangesInterceptor? interceptor = null)
+    {
+        var app = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:MovieApi", testDatabase.ConnectionString);
+            if (interceptor is not null)
+            {
+                builder.ConfigureTestServices(services =>
+                    services.ConfigureDbContext<MovieDbContext>(options => options.AddInterceptors(interceptor)));
+            }
+        });
 
         try
         {

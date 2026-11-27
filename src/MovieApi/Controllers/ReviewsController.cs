@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
 using MovieApi.DTOs;
@@ -10,7 +10,7 @@ namespace MovieApi.Controllers;
 [ApiController]
 public class ReviewsController(MovieDbContext context) : ControllerBase
 {
-    private const int SqliteForeignKeyViolation = 787;
+    private const int SqlServerConstraintViolation = 547;
 
     [HttpGet("api/movies/{movieId:int}/reviews")]
     public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews(int movieId, CancellationToken cancellationToken)
@@ -46,10 +46,15 @@ public class ReviewsController(MovieDbContext context) : ControllerBase
             await context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException exception) when (
-            exception.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteForeignKeyViolation })
+            exception.InnerException is SqlException { Number: SqlServerConstraintViolation })
         {
             // The movie foreign key is enforced even when a delete races this insert.
-            return NotFound();
+            if (!await context.Movies.AnyAsync(movie => movie.Id == movieId, cancellationToken))
+            {
+                return NotFound();
+            }
+
+            throw;
         }
 
         return CreatedAtAction(nameof(GetReview), new { id = review.Id },
