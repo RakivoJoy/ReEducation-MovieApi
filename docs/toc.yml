@@ -1,0 +1,8 @@
+- name: Home
+  href: index.md
+- name: Architecture
+  href: architecture/
+- name: API reference
+  href: api/toc.yml
+- name: Contributor guides
+  href: guides/

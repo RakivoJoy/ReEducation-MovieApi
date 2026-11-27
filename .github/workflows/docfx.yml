@@ -1,0 +1,52 @@
+name: DocFX
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate DocFX
+    if: >-
+      github.event_name == 'push' ||
+      (contains(github.event.pull_request.labels.*.name, 'gen-docfx') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'gen-docfx') &&
+       github.event.action != 'unlabeled')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet tool restore
+      - run: dotnet restore src/MovieApi/MovieApi.csproj
+      - run: dotnet docfx docs/docfx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: movieapi-docfx
+          path: docs/_site
+          if-no-files-found: error
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name == 'push'
+        with:
+          path: docs/_site
+
+  deploy:
+    name: Publish GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

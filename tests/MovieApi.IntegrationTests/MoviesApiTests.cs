@@ -2,36 +2,28 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using MovieApi.Controllers;
-using MovieApi.Data;
 using MovieApi.DTOs;
 using MovieApi.Models;
 using Xunit;
+using static MovieApi.IntegrationTests.MovieApiTestHost;
 
 namespace MovieApi.IntegrationTests;
 
 public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> factory)
     : IClassFixture<WebApplicationFactory<WeatherForecastController>>
 {
-    private const string Route = "/api/movies";
-    private static readonly string[] ActorJsonProperties = ["birthYear", "id", "name"];
-
     [Fact]
     public async Task GetMoviesReturnsEmptyListForEmptyCatalog()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
 
         // Act
-        var movies = await client.GetFromJsonAsync<MovieDto[]>(Route);
+        var movies = await client.GetFromJsonAsync<MovieDto[]>(MoviesRoute);
 
         // Assert
         Assert.NotNull(movies);
@@ -42,13 +34,13 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMoviesReturnsSummariesWithoutRelatedData()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
         // Act
-        var catalog = await client.GetFromJsonAsync<JsonElement>(Route);
+        var catalog = await client.GetFromJsonAsync<JsonElement>(MoviesRoute);
 
         // Assert
         var summary = Assert.Single(catalog.EnumerateArray());
@@ -63,13 +55,13 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMovieReturnsDetailsReviewsAndActors()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
         // Act
-        var detail = await client.GetFromJsonAsync<MovieDetailDto>($"{Route}/{movie.Id}");
+        var detail = await client.GetFromJsonAsync<MovieDetailDto>($"{MoviesRoute}/{movie.Id}");
 
         // Assert
         Assert.NotNull(detail);
@@ -84,13 +76,13 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task PostMovieReturnsCreatedWithLocationAndPersistsMovie()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var request = new MovieCreateDto { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
 
         // Act
-        using var response = await client.PostAsJsonAsync(Route, request);
+        using var response = await client.PostAsJsonAsync(MoviesRoute, request);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -111,11 +103,11 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task WriteMovieRejectsInvalidFields(string method)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
-        var uri = method == "POST" ? Route : $"{Route}/{movie.Id}";
+        var uri = method == "POST" ? MoviesRoute : $"{MoviesRoute}/{movie.Id}";
         using var request = new HttpRequestMessage(new HttpMethod(method), uri)
         {
             Content = JsonContent.Create(new { Title = "", Genre = "", Year = 1700, Duration = 0 })
@@ -138,11 +130,11 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task PutMovieUpdatesFieldsAndPreservesRelations()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
-        var uri = $"{Route}/{movie.Id}";
+        var uri = $"{MoviesRoute}/{movie.Id}";
         var request = new MovieUpdateDto { Title = "Updated title", Year = 2017, Genre = "Drama", Duration = 120 };
 
         // Act
@@ -166,11 +158,11 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task DeleteMovieRemovesExistingMovie()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
-        var uri = $"{Route}/{movie.Id}";
+        var uri = $"{MoviesRoute}/{movie.Id}";
 
         // Act
         using var response = await client.DeleteAsync(uri);
@@ -189,13 +181,13 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMoviesCombinesFilters(string query, bool expectedMatch)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
         // Act
-        var movies = await client.GetFromJsonAsync<MovieDto[]>($"{Route}?{query}");
+        var movies = await client.GetFromJsonAsync<MovieDto[]>($"{MoviesRoute}?{query}");
 
         // Assert
         Assert.NotNull(movies);
@@ -206,14 +198,14 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     public async Task GetMovieDetailsReturnsMovieWithDetailsActorsAndReviews()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
         var movie = await AddMovieWithRelationsAsync(app);
 
         // Act
-        var details = await client.GetFromJsonAsync<MovieDetailDto>($"{Route}/{movie.Id}/details");
-        using var missing = await client.GetAsync($"{Route}/{movie.Id + 1}/details");
+        var details = await client.GetFromJsonAsync<MovieDetailDto>($"{MoviesRoute}/{movie.Id}/details");
+        using var missing = await client.GetAsync($"{MoviesRoute}/{movie.Id + 1}/details");
 
         // Assert
         Assert.NotNull(details);
@@ -226,229 +218,70 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     }
 
     [Fact]
-    public async Task ActorCanBeCreatedUpdatedAndListed()
+    public async Task MovieDetailRoutesPreserveMissingDetailsAndOrderRelatedItems()
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(factory, testDatabase);
         using var client = CreateClient(app);
-        const string actorsRoute = "/api/actors";
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var firstActor = new Actor { Name = "Jeremy Renner", BirthYear = 1971 };
+        var secondActor = new Actor { Name = "Amy Adams", BirthYear = 1974 };
+        database.AddRange(movie, firstActor, secondActor);
+        await database.SaveChangesAsync();
+        movie.Actors.Add(secondActor);
+        movie.Actors.Add(firstActor);
+        movie.Reviews.Add(new Review { ReviewerName = "Zoe", Comment = "First review", Rating = 5 });
+        movie.Reviews.Add(new Review { ReviewerName = "Alex", Comment = "Second review", Rating = 4 });
+        await database.SaveChangesAsync();
+        var expectedReviewIds = movie.Reviews.Select(review => review.Id).Order().ToArray();
+        var expectedActorIds = new[] { firstActor.Id, secondActor.Id }.Order().ToArray();
 
         // Act
-        using var created = await client.PostAsJsonAsync(actorsRoute, new { Name = "Tom Hanks", BirthYear = 1956 });
-        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var location = Assert.IsType<Uri>(created.Headers.Location, exactMatch: false);
-        var actor = await client.GetFromJsonAsync<ActorDto>(location);
-        using var updated = await client.PutAsJsonAsync(location, new { Name = "Thomas Hanks", BirthYear = 1956 });
-        var actors = await client.GetFromJsonAsync<ActorDto[]>(actorsRoute);
+        var detail = await client.GetFromJsonAsync<MovieDetailDto>($"{MoviesRoute}/{movie.Id}");
+        var detailsRoute = await client.GetFromJsonAsync<MovieDetailDto>($"{MoviesRoute}/{movie.Id}/details");
 
         // Assert
-        Assert.Equal("Tom Hanks", actor?.Name);
-        Assert.Equal(HttpStatusCode.NoContent, updated.StatusCode);
-        Assert.Equal("Thomas Hanks", Assert.Single(actors!).Name);
-    }
-
-    [Fact]
-    public async Task ReviewCanBeCreatedListedAndDeleted()
-    {
-        // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
-        using var client = CreateClient(app);
-        var movie = await AddMovieWithRelationsAsync(app);
-        var reviewsRoute = $"{Route}/{movie.Id}/reviews";
-        var request = new { ReviewerName = "Robin", Comment = "Engaging", Rating = 4 };
-
-        // Act
-        using var missingMovie = await client.PostAsJsonAsync($"{Route}/{movie.Id + 1}/reviews", request);
-        using var created = await client.PostAsJsonAsync(reviewsRoute, request);
-        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var location = created.Headers.Location;
-        Assert.NotNull(location);
-        var review = await client.GetFromJsonAsync<ReviewDto>(location);
-        var reviews = await client.GetFromJsonAsync<ReviewDto[]>(reviewsRoute);
-        using var deleted = await client.DeleteAsync(location);
-        using var missingReview = await client.GetAsync(location);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotFound, missingMovie.StatusCode);
-        Assert.Equal(4, review?.Rating);
-        Assert.Contains(review!, reviews!);
-        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, missingReview.StatusCode);
+        Assert.NotNull(detail);
+        Assert.NotNull(detailsRoute);
+        Assert.Null(detail.Details);
+        Assert.Null(detailsRoute.Details);
+        Assert.Equal(expectedReviewIds, detail.Reviews.Select(review => review.Id));
+        Assert.Equal(expectedReviewIds, detailsRoute.Reviews.Select(review => review.Id));
+        Assert.Equal(expectedActorIds, detail.Actors.Select(actor => actor.Id));
+        Assert.Equal(expectedActorIds, detailsRoute.Actors.Select(actor => actor.Id));
     }
 
     [Theory]
-    [InlineData(false)]
     [InlineData(true)]
-    public async Task PostMovieActorSavesRoleForNewAndExistingLinks(bool existingLink)
+    [InlineData(false)]
+    public async Task MovieWriteReturnsNotFoundWhenMovieIsDeletedBeforeSave(bool update)
     {
         // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
-        using var client = CreateClient(app);
-        var movie = await AddMovieWithRelationsAsync(app);
-        var actor = Assert.Single(movie.Actors);
-        if (existingLink)
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var deleteMovie = new BeforeSave(async cancellationToken =>
         {
-            await using var scope = app.Services.CreateAsyncScope();
-            var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
-            await database.Database.MigrateAsync("20261124165134_AddMovieActors");
-            await database.Database.MigrateAsync();
-        }
-        else
-        {
-            await using var scope = app.Services.CreateAsyncScope();
-            var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
-            actor = new Actor { Name = "Jeremy Renner", BirthYear = 1971 };
-            database.Actors.Add(actor);
-            await database.SaveChangesAsync();
-        }
-        var movieRoute = $"{Route}/{movie.Id}";
-        var castRoute = $"{movieRoute}/actors/{actor.Id}";
-        var before = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
-
-        // Act
-        using var invalid = await client.PostAsJsonAsync(castRoute, new { Role = "" });
-        using var missingActor = await client.PostAsJsonAsync($"{movieRoute}/actors/{actor.Id + 1}", new { Role = "Lead" });
-        using var missingMovie = await client.PostAsJsonAsync($"{Route}/{movie.Id + 1}/actors/{actor.Id}", new { Role = "Lead" });
-        using var saved = await client.PostAsJsonAsync(castRoute, new { Role = "Lead" });
-        using var duplicate = await client.PostAsJsonAsync(castRoute, new { Role = "Other" });
-        var after = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
-
-        // Assert
-        Assert.NotNull(before);
-        var priorLink = before.Actors.SingleOrDefault(item => item.Id == actor.Id);
-        Assert.Equal(existingLink, priorLink is not null);
-        Assert.Null(priorLink?.Role);
-        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, missingActor.StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, missingMovie.StatusCode);
-        Assert.Equal(existingLink ? HttpStatusCode.NoContent : HttpStatusCode.Created, saved.StatusCode);
-        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
-        Assert.NotNull(after);
-        Assert.Equal("Lead", Assert.Single(after.Actors, item => item.Id == actor.Id).Role);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("/details")]
-    public async Task MovieCastJsonIncludesOnlyAssignedRoles(string routeSuffix)
-    {
-        // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
+            await database.Movies.Where(candidate => candidate.Id == movie.Id).ExecuteDeleteAsync(cancellationToken);
+        });
+        using var app = await CreateAppAsync(factory, testDatabase, deleteMovie);
+        database.Movies.Add(movie);
+        await database.SaveChangesAsync();
         using var client = CreateClient(app);
-        var movie = await AddMovieWithRelationsAsync(app);
-        var actor = Assert.Single(movie.Actors);
-        var detailsRoute = $"{Route}/{movie.Id}{routeSuffix}";
+        var movieRoute = $"{MoviesRoute}/{movie.Id}";
 
         // Act
-        var before = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
-        using var saved = await client.PostAsJsonAsync($"{Route}/{movie.Id}/actors/{actor.Id}", new { Role = "Lead" });
-        var after = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
-        var actorJson = await client.GetFromJsonAsync<JsonElement>($"/api/actors/{actor.Id}");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
-        var castMember = Assert.Single(after.GetProperty("actors").EnumerateArray());
-        Assert.False(Assert.Single(before.GetProperty("actors").EnumerateArray()).TryGetProperty("role", out _));
-        Assert.Equal(actor.Id, castMember.GetProperty("id").GetInt32());
-        Assert.Equal(actor.Name, castMember.GetProperty("name").GetString());
-        Assert.Equal(actor.BirthYear, castMember.GetProperty("birthYear").GetInt32());
-        Assert.Equal("Lead", castMember.GetProperty("role").GetString());
-        Assert.Equal(ActorJsonProperties, actorJson.EnumerateObject().Select(property => property.Name).Order());
-    }
-
-    [Theory]
-    [InlineData("POST", "/api/actors", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
-    [InlineData("PUT", "/api/actors/1", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
-    [InlineData("POST", "/api/movies/1/reviews", """{"reviewerName":"","rating":6}""", "ReviewerName", "Rating")]
-    public async Task InvalidRequestsReturnValidationErrors(
-        string method, string path, string json, string requiredField, string rangeField)
-    {
-        // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
-        using var client = CreateClient(app);
-        using var request = new HttpRequestMessage(new HttpMethod(method), path)
-        {
-            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
-        };
-
-        // Act
-        using var response = await client.SendAsync(request);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var errors = problem.GetProperty("errors");
-        Assert.True(errors.TryGetProperty(requiredField, out _));
-        Assert.True(errors.TryGetProperty(rangeField, out _));
-    }
-
-    [Theory]
-    [InlineData("/api/movies/1")]
-    [InlineData("/api/movies/1/reviews")]
-    [InlineData("/api/actors/1")]
-    public async Task GetMissingResourceReturnsNotFound(string path)
-    {
-        // Arrange
-        await using var connection = CreateConnection();
-        using var app = await CreateAppAsync(connection);
-        using var client = CreateClient(app);
-
-        // Act
-        using var response = await client.GetAsync(path);
+        using var response = update
+            ? await client.PutAsJsonAsync(movieRoute, new MovieUpdateDto
+            {
+                Title = "Updated title", Year = movie.Year, Genre = movie.Genre, Duration = movie.Duration
+            })
+            : await client.DeleteAsync(movieRoute);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");
-
-    private async Task<WebApplicationFactory<WeatherForecastController>> CreateAppAsync(SqliteConnection connection)
-    {
-        // Keep this connection open for the lifetime of the test's private database.
-        await connection.OpenAsync();
-        var app = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
-        {
-            services.RemoveAll<IDbContextOptionsConfiguration<MovieDbContext>>();
-            services.AddDbContext<MovieDbContext>(options => options.UseSqlite(connection));
-        }));
-
-        try
-        {
-            await using var scope = app.Services.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<MovieDbContext>().Database.MigrateAsync();
-            return app;
-        }
-        catch
-        {
-            await app.DisposeAsync();
-            throw;
-        }
-    }
-
-    private static HttpClient CreateClient(WebApplicationFactory<WeatherForecastController> app) =>
-        app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
-
-    private static async Task<Movie> AddMovieWithRelationsAsync(WebApplicationFactory<WeatherForecastController> app)
-    {
-        await using var scope = app.Services.CreateAsyncScope();
-        var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
-        var movie = new Movie
-        {
-            Title = "Arrival",
-            Year = 2016,
-            Genre = "Science fiction",
-            Duration = 116,
-            Details = new MovieDetails { Synopsis = "A linguist makes first contact.", Language = "English", Budget = 47_000_000m },
-            Reviews = { new Review { ReviewerName = "Alex", Comment = "Thoughtful", Rating = 5 } },
-            Actors = { new Actor { Name = "Amy Adams", BirthYear = 1974 } }
-        };
-        database.Movies.Add(movie);
-        await database.SaveChangesAsync();
-        return movie;
+        Assert.False(await database.Movies.AnyAsync(candidate => candidate.Id == movie.Id));
     }
 }

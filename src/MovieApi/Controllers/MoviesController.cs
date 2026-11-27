@@ -10,68 +10,102 @@ namespace MovieApi.Controllers;
 // ASP.NET Core replaces [controller] with the class name minus the Controller suffix.
 // ApiController enables automatic request binding and returns HTTP 400 for invalid model state.
 // Dependency injection supplies a scoped MovieDbContext through the primary constructor.
+/// <summary>Exposes movie catalog and cast assignment endpoints.</summary>
 [Route("api/[controller]")]
 [ApiController]
 public class MoviesController(MovieDbContext context, CastAssignmentService castAssignment) : ControllerBase
 {
+    /// <summary>Lists movie summaries matching all supplied filters.</summary>
+    /// <param name="genre">The optional genre.</param>
+    /// <param name="year">The optional release year.</param>
+    /// <param name="actor">The optional cast actor name.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The matching summaries, or an empty list.</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(
         [FromQuery] string? genre, [FromQuery] int? year, [FromQuery] string? actor,
         CancellationToken cancellationToken)
     {
-        IQueryable<Movie> movies = context.Movies;
+        IQueryable<Movie> movieQuery = context.Movies;
         if (!string.IsNullOrWhiteSpace(genre))
         {
-            movies = movies.Where(movie => movie.Genre == genre);
+            movieQuery = movieQuery.Where(movie => movie.Genre == genre);
         }
 
         if (year.HasValue)
         {
-            movies = movies.Where(movie => movie.Year == year.Value);
+            movieQuery = movieQuery.Where(movie => movie.Year == year.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(actor))
         {
-            movies = movies.Where(movie => movie.Actors.Any(castMember => castMember.Name == actor));
+            movieQuery = movieQuery.Where(movie => movie.Actors.Any(castActor => castActor.Name == actor));
         }
 
-        // Project to the summary DTO so the query selects only the catalog fields.
-        return await movies
+        return await movieQuery
             .Select(movie => new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration))
             .ToListAsync(cancellationToken);
     }
 
+    /// <summary>Reads a movie's detailed representation through the details route.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The same representation as GetMovie, or HTTP 404.</returns>
     [HttpGet("{id:int}/details")]
     public Task<ActionResult<MovieDetailDto>> GetMovieDetails(int id, CancellationToken cancellationToken) =>
         FindMovieDetailAsync(id, cancellationToken);
 
+    /// <summary>Reads a movie with optional details, reviews, and cast.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The detailed representation, or HTTP 404.</returns>
     [HttpGet("{id:int}")]
     public Task<ActionResult<MovieDetailDto>> GetMovie(int id, CancellationToken cancellationToken) =>
         FindMovieDetailAsync(id, cancellationToken);
 
     private async Task<ActionResult<MovieDetailDto>> FindMovieDetailAsync(int id, CancellationToken cancellationToken)
     {
-        // The DTO projection loads the two collections without exposing EF navigation properties.
-        // Split queries avoid multiplying the review and actor rows in a single join.
-        var movie = await context.Movies
+        // Separate collection queries avoid returning a row for every review and cast entry combination.
+        var movieDetail = await context.Movies
             .Where(movie => movie.Id == id)
             .AsSplitQuery()
             .Select(movie => new MovieDetailDto(
-                movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration,
-                movie.Details == null ? null : new MovieDetailsDto(
-                    movie.Details.Id, movie.Details.Synopsis, movie.Details.Language, movie.Details.Budget),
-                movie.Reviews.OrderBy(review => review.Id)
-                    .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating)).ToList(),
-                movie.Cast.OrderBy(castMember => castMember.ActorId)
+                movie.Id,
+                movie.Title,
+                movie.Year,
+                movie.Genre,
+                movie.Duration,
+                movie.Details == null
+                    ? null
+                    : new MovieDetailsDto(
+                        movie.Details.Id,
+                        movie.Details.Synopsis,
+                        movie.Details.Language,
+                        movie.Details.Budget),
+                movie.Reviews
+                    .OrderBy(review => review.Id)
+                    .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating))
+                    .ToList(),
+                movie.Cast
+                    .OrderBy(castMember => castMember.ActorId)
                     .Select(castMember => new MovieCastMemberDto(
-                        castMember.ActorId, castMember.Actor.Name, castMember.Actor.BirthYear)
+                        castMember.ActorId,
+                        castMember.Actor.Name,
+                        castMember.Actor.BirthYear)
                     {
                         Role = castMember.Role
-                    }).ToList()))
+                    })
+                    .ToList()))
             .SingleOrDefaultAsync(cancellationToken);
-        return movie is null ? NotFound() : movie;
+        return movieDetail is null ? NotFound() : movieDetail;
     }
 
+    /// <summary>Delegates cast assignment and maps the service outcome to HTTP.</summary>
+    /// <param name="movieId">The movie identifier.</param>
+    /// <param name="actorId">The actor identifier.</param>
+    /// <param name="request">The role to assign.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 201 for a new link, 204 for filling a role, 404 for a missing resource, or 409 for an assigned role.</returns>
     [HttpPost("{movieId:int}/actors/{actorId:int}")]
     public async Task<IActionResult> PostMovieActor(
         int movieId, int actorId, MovieActorCreateDto request, CancellationToken cancellationToken)
@@ -87,11 +121,13 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         };
     }
 
+    /// <summary>Creates a movie from its catalog fields.</summary>
+    /// <param name="request">The values for the new movie.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 201 with the movie summary and a location for the new resource.</returns>
     [HttpPost]
     public async Task<ActionResult<MovieDto>> PostMovie(MovieCreateDto request, CancellationToken cancellationToken)
     {
-        // MovieCreateDto is the JSON input contract. Copying its fields leaves ID generation
-        // to the database and keeps relationship changes outside this operation.
         var movie = new Movie
         {
             Title = request.Title,
@@ -99,20 +135,21 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
             Genre = request.Genre,
             Duration = request.Duration
         };
-        // Add registers a pending insert. SaveChangesAsync writes the row and populates its ID.
         context.Movies.Add(movie);
         await context.SaveChangesAsync(cancellationToken);
 
-        // Return HTTP 201 with a Location header generated from the GET action and the new ID.
         var summary = new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration);
         return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, summary);
     }
 
+    /// <summary>Replaces the catalog fields of a movie.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="request">The replacement catalog fields.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 204 on success or 404 if the movie is missing.</returns>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> PutMovie(int id, MovieUpdateDto request, CancellationToken cancellationToken)
     {
-        // The route supplies the primary key. FindAsync returns a tracked entity so EF can
-        // detect changes to its properties when SaveChangesAsync runs.
         var movie = await context.Movies.FindAsync([id], cancellationToken);
         if (movie is null)
         {
@@ -130,19 +167,23 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         }
         catch (DbUpdateConcurrencyException)
         {
-            // A row can disappear between lookup and save. Return 404 if it is gone.
-            // Rethrow a concurrency failure if the record still exists.
-            if (!await context.Movies.AnyAsync(movie => movie.Id == id, cancellationToken))
+            // A concurrent delete makes the resource missing. Other concurrency failures still surface.
+            var movieStillExists = await context.Movies.AnyAsync(candidate => candidate.Id == id, cancellationToken);
+            if (movieStillExists)
             {
-                return NotFound();
+                throw;
             }
 
-            throw;
+            return NotFound();
         }
 
-        return NoContent(); // HTTP 204 means the update succeeded and has no response body.
+        return NoContent();
     }
 
+    /// <summary>Deletes a movie.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 204 on success or 404 if the movie is missing.</returns>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteMovie(int id, CancellationToken cancellationToken)
     {
@@ -152,7 +193,7 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
             return NotFound();
         }
 
-        // Remove registers a pending delete. The database applies its configured cascade rules on save.
+        // SQL Server cascades the delete to details, reviews, and cast links.
         context.Movies.Remove(movie);
         try
         {

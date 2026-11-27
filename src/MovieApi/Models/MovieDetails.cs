@@ -1,5 +1,6 @@
 namespace MovieApi.Models;
 
+/// <summary>Supplementary information for a movie. Each movie can have at most one details record.</summary>
 public class MovieDetails
 {
     public int Id { get; set; }

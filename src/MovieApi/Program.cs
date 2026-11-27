@@ -5,7 +5,7 @@ using MovieApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Use the application's configured SQL Server database for each scoped context.
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<CastAssignmentService>();
@@ -13,7 +13,7 @@ builder.Services.AddDbContext<MovieDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("MovieApi")
         ?? throw new InvalidOperationException("The MovieApi connection string is required.");
-    options.UseSqlite(connectionString);
+    options.UseSqlServer(connectionString);
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -34,5 +34,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Complete optional development seeding before the application accepts requests.
 app.SeedData();
 app.Run();
