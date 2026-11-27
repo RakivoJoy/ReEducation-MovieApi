@@ -168,12 +168,19 @@ When implementing a feature:
 3. Follow existing project conventions.
 4. Add or update tests where appropriate.
 5. Build and run relevant tests when possible.
-6. Update the relevant backlog Markdown file when implementing a tracked item. Record its status, check only verified acceptance criteria, and reference the implementation when useful. Include the backlog update in the same commit when making an atomic commit for the item.
+6. For tracked work, follow the backlog commit rules below.
 7. Report what changed and any remaining issues.
 
 Do not rewrite unrelated code or perform broad refactoring without justification.
 
 When creating a backlog, use the [ICE backlog template](docs/templates/ICE-BACKLOG.md) for scoring, status, and acceptance criteria. Follow the format of an existing backlog when updating it.
+
+### Backlog commit rules
+
+- Work on one backlog item at a time. Every implemented item must have at least one dedicated commit. Each commit may cover only one backlog item, even when items touch the same files.
+- Commit the item's actual changes and its backlog Markdown update together. Include the item ID in the commit message. Record the current status and check only verified acceptance criteria.
+- If an item needs multiple commits, keep each commit focused on that item. If a check is pending, commit the changes with the item marked **In progress**. A later verification commit may record the result after it is observed.
+- Before starting the next item, review the staged diff and commit the current item. Before reporting completion, check that each item has its own commit with both the implementation and its corresponding backlog update.
 
 Do not silently change public APIs, database schemas or project architecture.
 
