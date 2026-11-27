@@ -10,6 +10,16 @@ Repository structure for a .NET Movie API.
 
 Run `pwsh -File scripts/verify.ps1` from the repository root to restore dependencies, build in Release configuration, and run the tests. CI treats build warnings as errors.
 
+## Documentation
+
+- [DocFX site and C# API reference](https://rakivojoy.github.io/ReEducation-MovieApi/)
+- [Architecture overview](docs/architecture/overview.md)
+- [Application UML](docs/architecture/application-uml.md)
+- [SQL Server entity-relationship diagram](docs/architecture/database-erd.md)
+- [Cast assignment sequence diagram](docs/architecture/cast-assignment-sequence.md)
+
+GitHub renders the Mermaid diagrams directly in the linked Markdown files. The DocFX site updates from `main`.
+
 ## Local database
 
 On Windows, the Development configuration connects to the local default SQL Server instance using Windows Authentication and the `MovieApiDev` database. From the repository root, provision the database and apply the EF Core migrations:

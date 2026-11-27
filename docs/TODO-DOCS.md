@@ -30,6 +30,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Done |
 | DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Done |
 | DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Done |
+| DOC-17 | Publish the merged DocFX site on GitHub Pages | 9 | 9 | 7 | 567 | In progress |
 
 ## Backlog items
 
@@ -194,6 +195,8 @@ Add a short architecture entry point and update the Docs README and DocFX naviga
 
 Generated the DocFX site and checked that the overview, diagrams, API reference, and three guides were present.
 
+The [repository README](../README.md#documentation) now links directly to the DocFX site and the GitHub-rendered Mermaid diagrams.
+
 ### DOC-16 Review and organize agent instructions
 
 After the three reusable guides are drafted, review `AGENTS.md` for sections that would be easier to maintain as focused references. Keep repository-wide instructions readily visible.
@@ -206,3 +209,16 @@ After the three reusable guides are drafted, review `AGENTS.md` for sections tha
 **Completion**
 
 Linked each guide at the point of use. Kept the remaining instructions in AGENTS.md because Git, approval, testing, and learning policies apply across the repository and are easier to find together.
+
+### DOC-17 Publish the merged DocFX site on GitHub Pages
+
+Keep labeled PR previews as downloadable artifacts. Generate and deploy the site automatically when a merge updates `main`.
+
+**Acceptance criteria**
+
+- [x] Configure GitHub Pages to use GitHub Actions, with a deploy job gated to pushes to `main`.
+- [ ] Verify that the first merged workflow serves the landing page and architecture pages at the [public site](https://rakivojoy.github.io/ReEducation-MovieApi/).
+
+**Verification**
+
+GitHub confirmed the Pages source is GitHub Actions. The first deployment depends on this workflow reaching `main`.
