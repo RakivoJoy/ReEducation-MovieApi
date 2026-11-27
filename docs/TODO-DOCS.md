@@ -27,7 +27,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Done |
 | DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Done |
-| DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Ready |
+| DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Done |
 | DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Ready |
 | DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Ready |
 
@@ -174,8 +174,12 @@ After DOC-09, add `docs/architecture/cast-assignment-sequence.md` with a Mermaid
 
 **Acceptance criteria**
 
-- [ ] Show the client, controller, service, and database interactions for a new link and for an existing link with no role.
-- [ ] Include the missing resource and already-assigned outcomes with the corresponding HTTP responses. Link to the implementation and the relevant integration tests.
+- [x] Show the client, controller, service, and database interactions for a new link and for an existing link with no role.
+- [x] Include the missing resource and already-assigned outcomes with the corresponding HTTP responses. Link to the implementation and the relevant integration tests.
+
+**Completion**
+
+Traced each outcome through the service and controller and checked the supporting integration tests by inspection.
 
 ### DOC-15 Write the architecture overview and organize navigation
 
