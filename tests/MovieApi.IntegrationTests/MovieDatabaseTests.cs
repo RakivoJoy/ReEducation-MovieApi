@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
 using MovieApi.Models;
@@ -12,7 +12,9 @@ public sealed class MovieDatabaseTests
     public async Task MovieDetailsRejectsSecondRecordForSameMovie()
     {
         // Arrange
-        await using var database = await CreateDatabaseAsync();
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        await database.Database.MigrateAsync();
         var movie = CreateMovie("First movie");
         movie.Details = new MovieDetails { Synopsis = "Synopsis", Language = "English", Budget = 1000m };
         database.Movies.Add(movie);
@@ -28,15 +30,17 @@ public sealed class MovieDatabaseTests
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => database.SaveChangesAsync());
 
         // Assert
-        var sqliteError = Assert.IsType<SqliteException>(exception.InnerException);
-        Assert.Equal(2067, sqliteError.SqliteExtendedErrorCode); // SQLITE_CONSTRAINT_UNIQUE
+        var sqlError = Assert.IsType<SqlException>(exception.InnerException);
+        Assert.Equal(2601, sqlError.Number);
     }
 
     [Fact]
     public async Task MoviePersistsMultipleReviewsAndActorLinks()
     {
         // Arrange
-        await using var database = await CreateDatabaseAsync();
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        await database.Database.MigrateAsync();
         var movie = CreateMovie("First movie");
         var otherMovie = CreateMovie("Second movie");
         var sharedActor = new Actor { Name = "Shared actor", BirthYear = 1984 };
@@ -69,7 +73,9 @@ public sealed class MovieDatabaseTests
     public async Task ReviewRejectsRatingOutsideAllowedRange(int rating)
     {
         // Arrange
-        await using var database = await CreateDatabaseAsync();
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        await database.Database.MigrateAsync();
         var movie = CreateMovie("First movie");
         movie.Reviews.Add(new Review { ReviewerName = "Reviewer", Comment = "Review", Rating = rating });
         database.Movies.Add(movie);
@@ -78,27 +84,8 @@ public sealed class MovieDatabaseTests
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => database.SaveChangesAsync());
 
         // Assert
-        var sqliteError = Assert.IsType<SqliteException>(exception.InnerException);
-        Assert.Equal(275, sqliteError.SqliteExtendedErrorCode); // SQLITE_CONSTRAINT_CHECK
-    }
-
-    private static async Task<MovieDbContext> CreateDatabaseAsync()
-    {
-        var options = new DbContextOptionsBuilder<MovieDbContext>()
-            .UseSqlite("Data Source=:memory:;Foreign Keys=True").Options;
-        var database = new MovieDbContext(options);
-        try
-        {
-            // SQLite keeps the in-memory database alive as long as this connection stays open.
-            await database.Database.OpenConnectionAsync();
-            await database.Database.MigrateAsync();
-            return database;
-        }
-        catch
-        {
-            await database.DisposeAsync();
-            throw;
-        }
+        var sqlError = Assert.IsType<SqlException>(exception.InnerException);
+        Assert.Equal(547, sqlError.Number);
     }
 
     private static Movie CreateMovie(string title) => new()

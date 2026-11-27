@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
 using MovieApi.Models;
@@ -15,8 +15,8 @@ public enum CastAssignmentResult
 
 public sealed class CastAssignmentService(MovieDbContext context)
 {
-    private const int SqliteForeignKeyViolation = 787;
-    private const int SqlitePrimaryKeyViolation = 1555;
+    private const int SqlServerConstraintViolation = 547;
+    private const int SqlServerPrimaryKeyViolation = 2627;
 
     public async Task<CastAssignmentResult> AssignRoleAsync(
         int movieId, int actorId, string role, CancellationToken cancellationToken)
@@ -41,12 +41,12 @@ public sealed class CastAssignmentService(MovieDbContext context)
                 await context.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException exception) when (
-                exception.InnerException is SqliteException { SqliteExtendedErrorCode: SqlitePrimaryKeyViolation })
+                exception.InnerException is SqlException { Number: SqlServerPrimaryKeyViolation })
             {
                 return CastAssignmentResult.RoleAlreadyAssigned;
             }
             catch (DbUpdateException exception) when (
-                exception.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteForeignKeyViolation })
+                exception.InnerException is SqlException { Number: SqlServerConstraintViolation })
             {
                 return CastAssignmentResult.ResourceMissing;
             }

@@ -2,22 +2,17 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore.Storage;
 using MovieApi.Controllers;
-using MovieApi.Data;
 using MovieApi.DTOs;
 using MovieApi.Models;
 using Xunit;
 
 namespace MovieApi.IntegrationTests;
 
-public class SeedDataTests(WebApplicationFactory<WeatherForecastController> factory)
-    : IClassFixture<WebApplicationFactory<WeatherForecastController>>
+public class SeedDataTests
 {
     [Theory]
     [InlineData(false)]
@@ -25,10 +20,10 @@ public class SeedDataTests(WebApplicationFactory<WeatherForecastController> fact
     public async Task DevelopmentStartupSeedsAnEmptyCatalogAndPreservesAnExistingCatalog(bool hasExistingMovie)
     {
         // Arrange
-        await using var connection = new SqliteConnection("Data Source=:memory:;Foreign Keys=True");
-        await connection.OpenAsync();
-        var options = new DbContextOptionsBuilder<MovieDbContext>().UseSqlite(connection).Options;
-        await using var database = new MovieDbContext(options);
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        // Match deployment by provisioning the database before starting either host.
+        await database.GetService<IRelationalDatabaseCreator>().CreateAsync();
         if (hasExistingMovie)
         {
             await database.Database.MigrateAsync();
@@ -36,9 +31,12 @@ public class SeedDataTests(WebApplicationFactory<WeatherForecastController> fact
             await database.SaveChangesAsync();
         }
 
-        // Act: Start the host twice against the same database.
-        var firstCatalog = await StartAndReadCatalogAsync(connection);
-        var secondCatalog = await StartAndReadCatalogAsync(connection);
+        // Act: Start two hosts against the same database.
+        var catalogs = await Task.WhenAll(
+            Task.Run(() => StartAndReadCatalogAsync(testDatabase)),
+            Task.Run(() => StartAndReadCatalogAsync(testDatabase)));
+        var firstCatalog = catalogs[0];
+        var secondCatalog = catalogs[1];
 
         // Assert
         Assert.Equal(firstCatalog.Select(movie => movie.Id).Order(), secondCatalog.Select(movie => movie.Id).Order());
@@ -70,17 +68,14 @@ public class SeedDataTests(WebApplicationFactory<WeatherForecastController> fact
         Assert.Equal("Amy Adams", sharedActor.Name);
     }
 
-    private async Task<MovieDto[]> StartAndReadCatalogAsync(SqliteConnection connection)
+    private static async Task<MovieDto[]> StartAndReadCatalogAsync(SqlServerTestDatabase testDatabase)
     {
+        using var factory = new WebApplicationFactory<WeatherForecastController>();
         using var app = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
             builder.UseSetting("SeedData:Enabled", "true");
-            builder.ConfigureTestServices(services =>
-            {
-                services.RemoveAll<IDbContextOptionsConfiguration<MovieDbContext>>();
-                services.AddDbContext<MovieDbContext>(options => options.UseSqlite(connection));
-            });
+            builder.UseSetting("ConnectionStrings:MovieApi", testDatabase.ConnectionString);
         });
         using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         return await client.GetFromJsonAsync<MovieDto[]>("/api/movies")

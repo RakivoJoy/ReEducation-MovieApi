@@ -17,8 +17,14 @@ public static class SeedDataExtensions
         var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
         database.Database.Migrate();
 
-        // Keep the empty-catalog check and the inserts in the same SQLite write transaction.
         using var transaction = database.Database.BeginTransaction();
+        // Serialize startup seeders until the catalog check and inserts have committed.
+        database.Database.ExecuteSqlRaw("""
+            DECLARE @result int;
+            EXEC @result = sp_getapplock @Resource = N'MovieApi.DemoCatalog',
+                @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 15000;
+            IF @result < 0 THROW 50001, 'Could not acquire the demo catalog seed lock.', 1;
+            """);
         if (database.Movies.Any())
         {
             return;
