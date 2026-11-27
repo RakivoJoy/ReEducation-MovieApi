@@ -1,6 +1,8 @@
 name: DocFX
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, reopened, synchronize, labeled, unlabeled]
 
@@ -10,7 +12,11 @@ permissions:
 jobs:
   generate:
     name: Generate DocFX
-    if: contains(github.event.pull_request.labels.*.name, 'gen-docfx') && (github.event.action != 'labeled' || github.event.label.name == 'gen-docfx') && github.event.action != 'unlabeled'
+    if: >-
+      github.event_name == 'push' ||
+      (contains(github.event.pull_request.labels.*.name, 'gen-docfx') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'gen-docfx') &&
+       github.event.action != 'unlabeled')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

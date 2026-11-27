@@ -53,6 +53,8 @@ After DOC-01, create the `gen-docfx` repository label and a standalone DocFX wor
 
 The draft PR's [unlabeled run](https://github.com/RakivoJoy/ReEducation-MovieApi/actions/runs/45996360375) skipped generation. Adding `gen-docfx` triggered a [successful hosted run with the HTML artifact](https://github.com/RakivoJoy/ReEducation-MovieApi/actions/runs/45996420020). The remaining event conditions were reviewed against the workflow.
 
+The [hosted DocFX job](https://github.com/RakivoJoy/ReEducation-MovieApi/actions/runs/46000220559) took 36 seconds, so PR generation remains opt-in. The workflow now also generates the artifact when `main` advances. The first hosted `main` run can be verified after the workflow merges.
+
 ### DOC-03 Write a reusable DocFX guide
 
 Add `docs/guides/docfx.md` for contributors who add or update documentation. Finalize examples after DOC-01 and DOC-02.
