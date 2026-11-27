@@ -86,4 +86,4 @@ Resolve before retiring the SQLite workflow. Demo-only data can be recreated thr
 
 **Completion**
 
-Opened the local `src/MovieApi/movieapi.db` read-only and compared its two movies, two details records, three reviews, three actors, and four cast links with the demo catalog. All values and relationships matched. The SQL Server development API reproduced the demo catalog on startup, so this local database requires no data transfer. The original SQLite file is still available.
+Opened the local `src/MovieApi/movieapi.db` read-only and compared its two movies, two details records, three reviews, three actors, and four cast links with the demo catalog. All values and relationships matched. The SQL Server development API reproduced the demo catalog on startup, so this local database requires no data transfer. The old database files were moved out of the working tree.

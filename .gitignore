@@ -7,4 +7,3 @@ TestResults/
 .env
 .env.*
 !.env.example
-src/MovieApi/movieapi.db*
