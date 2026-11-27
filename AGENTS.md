@@ -167,6 +167,8 @@ When implementing a feature:
 
 Do not rewrite unrelated code or perform broad refactoring without justification.
 
+When creating a backlog, use the [ICE backlog template](docs/templates/ICE-BACKLOG.md) for scoring, status, and acceptance criteria. Follow the format of an existing backlog when updating it.
+
 Do not silently change public APIs, database schemas or project architecture.
 
 Ask before performing destructive operations, deleting significant functionality, changing production infrastructure or introducing costly external services.
