@@ -1,3 +1,5 @@
+param([switch]$SkipTests)
+
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $solutions = @(Get-ChildItem -LiteralPath $repoRoot -File | Where-Object { $_.Extension -in '.sln', '.slnx' })
@@ -18,6 +20,11 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 dotnet build $solution --configuration Release --no-restore
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+if ($SkipTests) {
+    Write-Host 'Build completed. Tests were skipped.'
+    exit 0
+}
 
 dotnet test $solution --configuration Release --no-build --no-restore
 exit $LASTEXITCODE

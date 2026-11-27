@@ -29,3 +29,5 @@ Starting the API with the `http` or `https` launch profile applies pending migra
 ## Database integration tests
 
 Run `dotnet test MovieApi.slnx`. Database tests create and remove temporary databases named `MovieApiIntegrationTests_<id>` on the local default instance on Windows. For another server, set `MOVIEAPI_TEST_SQLSERVER` to a connection string for a login with permission to create and drop those databases. Use a development or test instance. GitHub Actions starts a disposable SQL Server container for these tests.
+
+Pull requests build automatically. Add the `run-tests` label to run the full xUnit suite on a pull request and on subsequent updates while the label is present. Pushes to `main` always run the full suite.
