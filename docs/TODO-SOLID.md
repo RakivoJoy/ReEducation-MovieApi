@@ -4,7 +4,7 @@ Backlog for making MovieApi easier to change while preserving its HTTP contracts
 
 ## ICE scoring
 
-Score each factor from 1 to 10. **Impact** measures the expected improvement in maintainability or correctness. **Confidence** measures how well the code supports that expectation. **Ease** measures how small and safe the change is, with 10 being easiest. Multiply the three values and review the highest scores first. The initial scores are estimates for PO triage.
+Scores follow the [ICE backlog template](templates/ICE-BACKLOG.md).
 
 | ID | Backlog item | Principle | Impact | Confidence | Ease | ICE | Status |
 | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
@@ -53,7 +53,3 @@ Revisit when movie reads gain another caller or substantial query logic. Put cat
 - [ ] The list endpoint still combines genre, year, and actor filters and returns summaries.
 - [ ] Both film detail routes still use the same projection and return `404` for a missing movie.
 - [ ] Existing route and response integration tests pass, including the POST response's `Location` link.
-
-## Template for new items
-
-**Title and status** · **Current code and reason to change** · **Smallest proposed change** · **Acceptance criteria** · **Impact × Confidence × Ease = ICE**
