@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+      timezone: Europe/Stockholm
 
 permissions:
   contents: read
@@ -14,6 +17,7 @@ env:
 jobs:
   build:
     name: Build
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,14 +29,43 @@ jobs:
 
   tests:
     name: xUnit tests
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-tests'))
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-tests'))
+    permissions:
+      actions: read
+      contents: read
     runs-on: ubuntu-latest
     steps:
+      - name: Check whether this commit already passed xUnit
+        if: github.event_name == 'schedule'
+        id: nightly
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs=$(gh api --paginate --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/verify.yml/runs" \
+            -f branch="$GITHUB_REF_NAME" -f head_sha="$GITHUB_SHA" -f status=completed \
+            --jq '.workflow_runs[] | select(.event == "schedule" or .event == "workflow_dispatch") | .id')
+          for run in $runs; do
+            passed=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" \
+              --jq '.jobs[] | select(.name == "xUnit tests") | .steps[] | select(.conclusion == "success" and (.name == "Run xUnit suite" or .name == "Run dotnet test MovieApi.slnx --configuration Release")) | .name')
+            if [[ -n "$passed" ]]; then
+              echo "This commit already passed the full xUnit suite."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
       - uses: actions/checkout@v4
+        if: steps.nightly.outputs.skip != 'true'
       - uses: actions/setup-dotnet@v4
+        if: steps.nightly.outputs.skip != 'true'
         with:
           dotnet-version: '10.0.x'
       - name: Start SQL Server for integration tests
+        if: steps.nightly.outputs.skip != 'true'
         shell: bash
         run: |
           password="MovieApi1!$(openssl rand -hex 16)"
@@ -50,4 +83,6 @@ jobs:
           done
           docker logs movieapi-sqlserver
           exit 1
-      - run: dotnet test MovieApi.slnx --configuration Release
+      - name: Run xUnit suite
+        if: steps.nightly.outputs.skip != 'true'
+        run: dotnet test MovieApi.slnx --configuration Release

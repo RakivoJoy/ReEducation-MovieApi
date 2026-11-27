@@ -41,3 +41,5 @@ Starting the API with the `http` or `https` launch profile applies pending migra
 Run `dotnet test MovieApi.slnx`. Database tests create and remove temporary databases named `MovieApiIntegrationTests_<id>` on the local default instance on Windows. For another server, set `MOVIEAPI_TEST_SQLSERVER` to a connection string for a login with permission to create and drop those databases. Use a development or test instance. GitHub Actions starts a disposable SQL Server container for these tests.
 
 GitHub shows separate **Build** and **xUnit tests** checks. Pull requests build automatically. Add the `run-tests` label to run the full xUnit suite before merging. New commits also run the suite while the label is attached. Open the **xUnit tests** check to see whether it ran or was skipped. You can also run tests for a branch from **Actions → Verify → Run workflow**.
+
+Verify checks `main` nightly at 03:17 Stockholm time. It runs the full suite only when the current commit has no successful nightly or manual test run on `main`. A failed test run is retried the next night. Unlabeled PRs still run only the Build check.
