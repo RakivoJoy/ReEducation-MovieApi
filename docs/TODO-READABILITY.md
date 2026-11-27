@@ -95,6 +95,8 @@ After the production refactors, split the mixed [MoviesApiTests](../tests/MovieA
 
 Separated movie, actor, review, and cast tests and kept shared error scenarios together. The shared host keeps each SQL Server database isolated. Added a missing-actor update case and verified the full Release suite.
 
+Updated the database refactor backlog and cast sequence diagram links to point to the relocated test classes.
+
 ## Implementation boundaries
 
 Keep changes local to the affected methods and classes. Use Single Responsibility when it makes an existing workflow clearer. Skip new layers, interfaces, and dependency changes unless a later backlog item explicitly justifies them. Add comments that explain intent, constraints, or concurrency decisions. Keep XML documentation aligned with the code. Run the relevant tests for each item and the full solution suite before reporting the refactor complete.
