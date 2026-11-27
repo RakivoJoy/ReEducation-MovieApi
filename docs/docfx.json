@@ -1,0 +1,13 @@
+{
+  "metadata": [{
+    "src": [{ "src": "../src/MovieApi", "files": ["MovieApi.csproj"] }],
+    "dest": "api",
+    "filter": "api-filter.yml"
+  }],
+  "build": {
+    "content": [{ "files": ["index.md", "toc.yml", "guides/*.md", "architecture/*.md", "api/*.yml"] }],
+    "output": "_site",
+    "template": ["default", "modern"],
+    "globalMetadata": { "_appName": "MovieApi" }
+  }
+}

@@ -1,0 +1,22 @@
+- name: Home
+  href: index.md
+- name: Architecture
+  items:
+    - name: Overview
+      href: architecture/overview.md
+    - name: Application UML
+      href: architecture/application-uml.md
+    - name: SQL Server schema
+      href: architecture/database-erd.md
+    - name: Cast assignment sequence
+      href: architecture/cast-assignment-sequence.md
+- name: API reference
+  href: api/toc.yml
+- name: Contributor guides
+  items:
+    - name: DocFX
+      href: guides/docfx.md
+    - name: C# comments
+      href: guides/csharp-comments.md
+    - name: Mermaid
+      href: guides/mermaid.md

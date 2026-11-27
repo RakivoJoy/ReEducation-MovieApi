@@ -5,7 +5,7 @@ using MovieApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Use the application's configured SQL Server database for each scoped context.
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<CastAssignmentService>();
@@ -34,5 +34,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Complete optional development seeding before the application accepts requests.
 app.SeedData();
 app.Run();

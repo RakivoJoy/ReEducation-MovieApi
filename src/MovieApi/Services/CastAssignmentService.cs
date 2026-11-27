@@ -5,19 +5,32 @@ using MovieApi.Models;
 
 namespace MovieApi.Services;
 
+/// <summary>Describes the outcome of assigning a role to a movie cast member.</summary>
 public enum CastAssignmentResult
 {
+    /// <summary>A new movie-actor link was created with the requested role.</summary>
     Created,
+    /// <summary>The role was set on an existing link whose role was null.</summary>
     Updated,
+    /// <summary>The movie, actor, or previously observed link no longer exists.</summary>
     ResourceMissing,
+    /// <summary>The link already has a role, including when another request assigns it first.</summary>
     RoleAlreadyAssigned
 }
 
+/// <summary>Assigns roles to movie cast members while preserving roles already assigned.</summary>
 public sealed class CastAssignmentService(MovieDbContext context)
 {
     private const int SqlServerConstraintViolation = 547;
     private const int SqlServerPrimaryKeyViolation = 2627;
 
+    /// <summary>Creates a cast link or fills the null role on an existing link.</summary>
+    /// <param name="movieId">The movie identifier.</param>
+    /// <param name="actorId">The actor identifier.</param>
+    /// <param name="role">The role to assign.</param>
+    /// <param name="cancellationToken">Cancels the database operations.</param>
+    /// <returns>The <see cref="CastAssignmentResult"/> describing the outcome.</returns>
+    /// <remarks>Constraint failures account for inserts or deletes that race the initial checks.</remarks>
     public async Task<CastAssignmentResult> AssignRoleAsync(
         int movieId, int actorId, string role, CancellationToken cancellationToken)
     {

@@ -10,10 +10,17 @@ namespace MovieApi.Controllers;
 // ASP.NET Core replaces [controller] with the class name minus the Controller suffix.
 // ApiController enables automatic request binding and returns HTTP 400 for invalid model state.
 // Dependency injection supplies a scoped MovieDbContext through the primary constructor.
+/// <summary>Exposes movie catalog and cast assignment endpoints.</summary>
 [Route("api/[controller]")]
 [ApiController]
 public class MoviesController(MovieDbContext context, CastAssignmentService castAssignment) : ControllerBase
 {
+    /// <summary>Lists movie summaries matching all supplied filters.</summary>
+    /// <param name="genre">The optional genre.</param>
+    /// <param name="year">The optional release year.</param>
+    /// <param name="actor">The optional cast actor name.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The matching summaries, or an empty list.</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MovieDto>>> GetMovies(
         [FromQuery] string? genre, [FromQuery] int? year, [FromQuery] string? actor,
@@ -41,10 +48,18 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
             .ToListAsync(cancellationToken);
     }
 
+    /// <summary>Reads a movie's detailed representation through the details route.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The same representation as GetMovie, or HTTP 404.</returns>
     [HttpGet("{id:int}/details")]
     public Task<ActionResult<MovieDetailDto>> GetMovieDetails(int id, CancellationToken cancellationToken) =>
         FindMovieDetailAsync(id, cancellationToken);
 
+    /// <summary>Reads a movie with optional details, reviews, and cast.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>The detailed representation, or HTTP 404.</returns>
     [HttpGet("{id:int}")]
     public Task<ActionResult<MovieDetailDto>> GetMovie(int id, CancellationToken cancellationToken) =>
         FindMovieDetailAsync(id, cancellationToken);
@@ -72,6 +87,12 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         return movie is null ? NotFound() : movie;
     }
 
+    /// <summary>Delegates cast assignment and maps the service outcome to HTTP.</summary>
+    /// <param name="movieId">The movie identifier.</param>
+    /// <param name="actorId">The actor identifier.</param>
+    /// <param name="request">The role to assign.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 201 for a new link, 204 for filling a role, 404 for a missing resource, or 409 for an assigned role.</returns>
     [HttpPost("{movieId:int}/actors/{actorId:int}")]
     public async Task<IActionResult> PostMovieActor(
         int movieId, int actorId, MovieActorCreateDto request, CancellationToken cancellationToken)
@@ -87,6 +108,10 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         };
     }
 
+    /// <summary>Creates a movie from its catalog fields.</summary>
+    /// <param name="request">The values for the new movie.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 201 with the movie summary and a location for the new resource.</returns>
     [HttpPost]
     public async Task<ActionResult<MovieDto>> PostMovie(MovieCreateDto request, CancellationToken cancellationToken)
     {
@@ -108,6 +133,11 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, summary);
     }
 
+    /// <summary>Replaces the catalog fields of a movie.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="request">The replacement catalog fields.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 204 on success or 404 if the movie is missing.</returns>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> PutMovie(int id, MovieUpdateDto request, CancellationToken cancellationToken)
     {
@@ -143,6 +173,10 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         return NoContent(); // HTTP 204 means the update succeeded and has no response body.
     }
 
+    /// <summary>Deletes a movie.</summary>
+    /// <param name="id">The movie identifier.</param>
+    /// <param name="cancellationToken">Cancels work for the request.</param>
+    /// <returns>HTTP 204 on success or 404 if the movie is missing.</returns>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteMovie(int id, CancellationToken cancellationToken)
     {
