@@ -493,6 +493,38 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Empty(await database.MovieActors.ToListAsync());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MovieWriteReturnsNotFoundWhenMovieIsDeletedBeforeSave(bool update)
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var deleteMovie = new BeforeSave(async cancellationToken =>
+        {
+            await database.Movies.Where(candidate => candidate.Id == movie.Id).ExecuteDeleteAsync(cancellationToken);
+        });
+        using var app = await CreateAppAsync(testDatabase, deleteMovie);
+        database.Movies.Add(movie);
+        await database.SaveChangesAsync();
+        using var client = CreateClient(app);
+        var movieRoute = $"{Route}/{movie.Id}";
+
+        // Act
+        using var response = update
+            ? await client.PutAsJsonAsync(movieRoute, new MovieUpdateDto
+            {
+                Title = "Updated title", Year = movie.Year, Genre = movie.Genre, Duration = movie.Duration
+            })
+            : await client.DeleteAsync(movieRoute);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.False(await database.Movies.AnyAsync(candidate => candidate.Id == movie.Id));
+    }
+
     private sealed class BeforeSave(Func<CancellationToken, Task> concurrentWrite) : SaveChangesInterceptor
     {
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(

@@ -10,7 +10,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Use the [
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | READ-01 | Make movie read queries easier to scan | 9 | 9 | 8 | 648 | Done |
 | READ-02 | Separate cast assignment decisions from database writes | 9 | 9 | 7 | 567 | Done |
-| READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Ready |
+| READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Done |
 | READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Ready |
 | READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Ready |
 | READ-06 | Organize SQL Server API tests around the resources they exercise | 7 | 8 | 6 | 336 | Ready |
@@ -49,8 +49,12 @@ Review create, update, and delete in [MoviesController](../src/MovieApi/Controll
 
 **Acceptance criteria**
 
-- [ ] Each write action states its intent through names and control flow. Comments explain concurrency and relationship behavior where it matters.
-- [ ] Preserve the create response and location, update semantics, missing-resource responses, and delete behavior. Verify these through the existing integration tests.
+- [x] Each write action states its intent through names and control flow. Comments explain concurrency and relationship behavior where it matters.
+- [x] Preserve the create response and location, update semantics, missing-resource responses, and delete behavior. Verify these through the existing integration tests.
+
+**Completion**
+
+Verified create and its Location, update and relationship preservation, delete, and concurrent deletion before both update and delete saves.
 
 ### READ-04 Clarify review collection and creation behavior
 

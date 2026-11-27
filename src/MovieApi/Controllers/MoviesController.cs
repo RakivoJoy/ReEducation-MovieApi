@@ -128,8 +128,6 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
     [HttpPost]
     public async Task<ActionResult<MovieDto>> PostMovie(MovieCreateDto request, CancellationToken cancellationToken)
     {
-        // MovieCreateDto is the JSON input contract. Copying its fields leaves ID generation
-        // to the database and keeps relationship changes outside this operation.
         var movie = new Movie
         {
             Title = request.Title,
@@ -137,11 +135,9 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
             Genre = request.Genre,
             Duration = request.Duration
         };
-        // Add registers a pending insert. SaveChangesAsync writes the row and populates its ID.
         context.Movies.Add(movie);
         await context.SaveChangesAsync(cancellationToken);
 
-        // Return HTTP 201 with a Location header generated from the GET action and the new ID.
         var summary = new MovieDto(movie.Id, movie.Title, movie.Year, movie.Genre, movie.Duration);
         return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, summary);
     }
@@ -154,8 +150,6 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
     [HttpPut("{id:int}")]
     public async Task<IActionResult> PutMovie(int id, MovieUpdateDto request, CancellationToken cancellationToken)
     {
-        // The route supplies the primary key. FindAsync returns a tracked entity so EF can
-        // detect changes to its properties when SaveChangesAsync runs.
         var movie = await context.Movies.FindAsync([id], cancellationToken);
         if (movie is null)
         {
@@ -173,17 +167,17 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
         }
         catch (DbUpdateConcurrencyException)
         {
-            // A row can disappear between lookup and save. Return 404 if it is gone.
-            // Rethrow a concurrency failure if the record still exists.
-            if (!await context.Movies.AnyAsync(movie => movie.Id == id, cancellationToken))
+            // A concurrent delete makes the resource missing. Other concurrency failures still surface.
+            var movieStillExists = await context.Movies.AnyAsync(candidate => candidate.Id == id, cancellationToken);
+            if (movieStillExists)
             {
-                return NotFound();
+                throw;
             }
 
-            throw;
+            return NotFound();
         }
 
-        return NoContent(); // HTTP 204 means the update succeeded and has no response body.
+        return NoContent();
     }
 
     /// <summary>Deletes a movie.</summary>
@@ -199,7 +193,7 @@ public class MoviesController(MovieDbContext context, CastAssignmentService cast
             return NotFound();
         }
 
-        // Remove registers a pending delete. The database applies its configured cascade rules on save.
+        // SQL Server cascades the delete to details, reviews, and cast links.
         context.Movies.Remove(movie);
         try
         {
