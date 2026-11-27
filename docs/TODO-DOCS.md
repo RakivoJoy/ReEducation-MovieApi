@@ -28,7 +28,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Done |
-| DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Ready |
+| DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Done |
 | DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Ready |
 
 ## Backlog items
@@ -187,8 +187,12 @@ Add a short architecture entry point and update the Docs README and DocFX naviga
 
 **Acceptance criteria**
 
-- [ ] A reader can start from the docs index or site navigation and find the overview, UML diagrams, database ER diagram, API reference, and reusable guides.
-- [ ] The overview describes the current request path and persistence boundary. Links are reviewed against the repository layout and included in the final DocFX generation review under DOC-02.
+- [x] A reader can start from the docs index or site navigation and find the overview, UML diagrams, database ER diagram, API reference, and reusable guides.
+- [x] The overview describes the current request path and persistence boundary. Links are reviewed against the repository layout and included in the final DocFX generation review under DOC-02.
+
+**Completion**
+
+Generated the DocFX site and checked that the overview, diagrams, API reference, and three guides were present.
 
 ### DOC-16 Review and organize agent instructions
 
