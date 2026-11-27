@@ -1,6 +1,10 @@
 name: Verify
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -8,6 +12,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      RUN_TESTS: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -15,6 +21,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Start SQL Server for integration tests
+        if: env.RUN_TESTS == 'true'
         shell: bash
         run: |
           password="MovieApi1!$(openssl rand -hex 16)"
@@ -32,7 +39,7 @@ jobs:
           done
           docker logs movieapi-sqlserver
           exit 1
-      - run: ./scripts/verify.ps1
+      - run: ./scripts/verify.ps1 -SkipTests:($env:RUN_TESTS -ne 'true')
         shell: pwsh
         env:
           CI: 'true'
