@@ -197,6 +197,8 @@ Generated the DocFX site and checked that the overview, diagrams, API reference,
 
 The [repository README](../README.md#documentation) now links directly to the DocFX site and the GitHub-rendered Mermaid diagrams.
 
+Added separate tables of contents for Architecture and Contributor guides. Verified that every page in both sections points to its generated sidebar, with the overview and diagram links in the Architecture sidebar.
+
 ### DOC-16 Review and organize agent instructions
 
 After the three reusable guides are drafted, review `AGENTS.md` for sections that would be easier to maintain as focused references. Keep repository-wide instructions readily visible.

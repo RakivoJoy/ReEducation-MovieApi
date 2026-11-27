@@ -14,6 +14,6 @@ On a pull request, add `gen-docfx`, open the **DocFX** Actions run, and download
 
 Updates to `main` generate the same artifact and deploy the [public DocFX site](https://rakivojoy.github.io/ReEducation-MovieApi/). Check **Actions → DocFX** for the deployment result.
 
-Put contributor articles in `docs/guides/` and add them to `docs/toc.yml`. Link to another article with a relative Markdown link. Use `<xref:MovieApi.Services.CastAssignmentService>` to link to a generated type.
+Put contributor articles in `docs/guides/` and add them to `docs/guides/toc.yml`. Add architecture articles to `docs/architecture/toc.yml`. Each section's table of contents becomes its sidebar, and `docs/toc.yml` defines the top navigation. Link to another article with a relative Markdown link. Use `<xref:MovieApi.Services.CastAssignmentService>` to link to a generated type.
 
 If an article is missing, check the content glob and TOC. If a type is missing, check `docs/api-filter.yml` and the generated metadata first. For an unresolved cross-reference, compare the link target with the UID in the generated YAML. Edit the Markdown or C# source for the fix.
