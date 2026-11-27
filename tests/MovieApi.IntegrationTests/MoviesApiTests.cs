@@ -224,6 +224,42 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     }
 
     [Fact]
+    public async Task MovieDetailRoutesPreserveMissingDetailsAndOrderRelatedItems()
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
+        using var client = CreateClient(app);
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        var firstActor = new Actor { Name = "Jeremy Renner", BirthYear = 1971 };
+        var secondActor = new Actor { Name = "Amy Adams", BirthYear = 1974 };
+        database.AddRange(movie, firstActor, secondActor);
+        await database.SaveChangesAsync();
+        movie.Actors.Add(secondActor);
+        movie.Actors.Add(firstActor);
+        movie.Reviews.Add(new Review { ReviewerName = "Zoe", Comment = "First review", Rating = 5 });
+        movie.Reviews.Add(new Review { ReviewerName = "Alex", Comment = "Second review", Rating = 4 });
+        await database.SaveChangesAsync();
+        var expectedReviewIds = movie.Reviews.Select(review => review.Id).Order().ToArray();
+        var expectedActorIds = new[] { firstActor.Id, secondActor.Id }.Order().ToArray();
+
+        // Act
+        var detail = await client.GetFromJsonAsync<MovieDetailDto>($"{Route}/{movie.Id}");
+        var detailsRoute = await client.GetFromJsonAsync<MovieDetailDto>($"{Route}/{movie.Id}/details");
+
+        // Assert
+        Assert.NotNull(detail);
+        Assert.NotNull(detailsRoute);
+        Assert.Null(detail.Details);
+        Assert.Null(detailsRoute.Details);
+        Assert.Equal(expectedReviewIds, detail.Reviews.Select(review => review.Id));
+        Assert.Equal(expectedReviewIds, detailsRoute.Reviews.Select(review => review.Id));
+        Assert.Equal(expectedActorIds, detail.Actors.Select(actor => actor.Id));
+        Assert.Equal(expectedActorIds, detailsRoute.Actors.Select(actor => actor.Id));
+    }
+
+    [Fact]
     public async Task ActorCanBeCreatedUpdatedAndListed()
     {
         // Arrange
