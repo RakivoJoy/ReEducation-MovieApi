@@ -1,6 +1,6 @@
 # TODO-SOLID
 
-Backlog for making MovieApi easier to change while preserving its HTTP contracts and SQLite behavior. SOLID-01 through SOLID-03 are complete. Revisit SOLID-04 when movie reads gain another caller or substantial query logic.
+Backlog for making MovieApi easier to change while preserving its HTTP contracts and database behavior. SOLID-01 through SOLID-03 are complete. Revisit SOLID-04 when movie reads gain another caller or substantial query logic.
 
 ## ICE scoring
 
@@ -17,11 +17,11 @@ SRP is the Single Responsibility Principle. The completed items were verified wi
 
 ### SOLID-01 Extract the cast assignment workflow
 
-`CastAssignmentService` checks resources, writes the link or legacy role, and handles SQLite constraint errors. `PostMovieActor` maps the service outcome to an HTTP response. [CastAssignmentService.cs](../src/MovieApi/Services/CastAssignmentService.cs) · [MoviesController.cs](../src/MovieApi/Controllers/MoviesController.cs)
+`CastAssignmentService` checks resources, writes the link or legacy role, and handles database constraint errors. `PostMovieActor` maps the service outcome to an HTTP response. [CastAssignmentService.cs](../src/MovieApi/Services/CastAssignmentService.cs) · [MoviesController.cs](../src/MovieApi/Controllers/MoviesController.cs)
 
 **Acceptance criteria**
 
-- [x] The service contains no MVC result types, and the action contains no SQLite error-code checks.
+- [x] The service contains no MVC result types, and the action delegates database error handling to the service.
 - [x] Integration tests cover `201` for a new link, `204` when filling a legacy role, `404` when either resource is missing, and `409` when a role already exists.
 - [x] The database still prevents duplicate links, and the conditional update prevents a concurrent request from overwriting an assigned role.
 
