@@ -525,6 +525,47 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.False(await database.Movies.AnyAsync(candidate => candidate.Id == movie.Id));
     }
 
+    [Fact]
+    public async Task GetReviewsDistinguishesAnEmptyCollectionFromAMissingMovie()
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        using var app = await CreateAppAsync(testDatabase);
+        using var client = CreateClient(app);
+        await using var database = testDatabase.CreateContext();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        database.Movies.Add(movie);
+        await database.SaveChangesAsync();
+
+        // Act
+        var reviews = await client.GetFromJsonAsync<ReviewDto[]>($"{Route}/{movie.Id}/reviews");
+        using var missing = await client.GetAsync($"{Route}/{movie.Id + 1}/reviews");
+
+        // Assert
+        Assert.NotNull(reviews);
+        Assert.Empty(reviews);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostReviewPropagatesRatingConstraintFailureWhenMovieExists()
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        await database.Database.MigrateAsync();
+        var movie = new Movie { Title = "Arrival", Year = 2016, Genre = "Science fiction", Duration = 116 };
+        database.Movies.Add(movie);
+        await database.SaveChangesAsync();
+        var controller = new ReviewsController(database);
+        var review = new ReviewCreateDto { ReviewerName = "Alex", Comment = "Invalid rating", Rating = 0 };
+
+        // Act and assert. Calling the action directly bypasses HTTP validation to exercise the SQL constraint.
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            controller.PostReview(movie.Id, review, CancellationToken.None));
+        Assert.Empty(await database.Reviews.ToListAsync());
+    }
+
     private sealed class BeforeSave(Func<CancellationToken, Task> concurrentWrite) : SaveChangesInterceptor
     {
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(

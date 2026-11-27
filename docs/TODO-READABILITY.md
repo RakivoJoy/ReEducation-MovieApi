@@ -11,7 +11,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Use the [
 | READ-01 | Make movie read queries easier to scan | 9 | 9 | 8 | 648 | Done |
 | READ-02 | Separate cast assignment decisions from database writes | 9 | 9 | 7 | 567 | Done |
 | READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Done |
-| READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Ready |
+| READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Done |
 | READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Ready |
 | READ-06 | Organize SQL Server API tests around the resources they exercise | 7 | 8 | 6 | 336 | Ready |
 
@@ -62,8 +62,12 @@ Make it clear in [ReviewsController](../src/MovieApi/Controllers/ReviewsControll
 
 **Acceptance criteria**
 
-- [ ] The code clearly distinguishes a movie with no reviews, a missing movie, and an insert failure that does not establish that the movie disappeared.
-- [ ] Preserve review ordering, reason for the fallback check, and HTTP status and location behavior. Verify the existing lifecycle and concurrent-delete cases.
+- [x] The code clearly distinguishes a movie with no reviews, a missing movie, and an insert failure that does not establish that the movie disappeared.
+- [x] Preserve review ordering, reason for the fallback check, and HTTP status and location behavior. Verify the existing lifecycle and concurrent-delete cases.
+
+**Completion**
+
+Verified empty versus missing review collections, the existing review lifecycle and concurrent-delete case, and propagation of SQL Server rating constraint failures while the movie still exists.
 
 ### READ-05 Separate startup setup from the seed transaction
 
