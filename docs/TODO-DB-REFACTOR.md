@@ -12,7 +12,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Complete 
 | DB-02 | Switch the EF Core provider and create SQL Server migrations | 10 | 9 | 6 | 540 | Done |
 | DB-03 | Port startup seeding and database error handling | 9 | 9 | 5 | 405 | Done |
 | DB-04 | Run integration tests against SQL Server | 10 | 9 | 5 | 450 | In progress |
-| DB-05 | Assess whether SQLite data needs to be copied | 8 | 8 | 7 | 448 | Ready |
+| DB-05 | Assess whether SQLite data needs to be copied | 8 | 8 | 7 | 448 | Done |
 
 ## Backlog items
 
@@ -82,5 +82,8 @@ Resolve before retiring the SQLite workflow. Demo-only data can be recreated thr
 
 **Acceptance criteria**
 
-- [ ] Determine whether any existing records must be kept and record the decision.
-- [ ] If records must be kept, save the transfer scripts under `scripts/sql/` and verify row counts and relationships against a copy before cutover.
+- [x] Determine whether any existing records must be kept and record the decision.
+
+**Completion**
+
+Opened the local `src/MovieApi/movieapi.db` read-only and compared its two movies, two details records, three reviews, three actors, and four cast links with the demo catalog. All values and relationships matched. The SQL Server development API reproduced the demo catalog on startup, so this local database requires no data transfer. The original SQLite file is still available.
