@@ -20,6 +20,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
     : IClassFixture<WebApplicationFactory<WeatherForecastController>>
 {
     private const string Route = "/api/movies";
+    private static readonly string[] ActorJsonProperties = ["birthYear", "id", "name"];
 
     [Fact]
     public async Task GetMoviesReturnsEmptyListForEmptyCatalog()
@@ -310,6 +311,7 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         // Act
         using var invalid = await client.PostAsJsonAsync(castRoute, new { Role = "" });
         using var missingActor = await client.PostAsJsonAsync($"{movieRoute}/actors/{actor.Id + 1}", new { Role = "Lead" });
+        using var missingMovie = await client.PostAsJsonAsync($"{Route}/{movie.Id + 1}/actors/{actor.Id}", new { Role = "Lead" });
         using var saved = await client.PostAsJsonAsync(castRoute, new { Role = "Lead" });
         using var duplicate = await client.PostAsJsonAsync(castRoute, new { Role = "Other" });
         var after = await client.GetFromJsonAsync<MovieDetailDto>(movieRoute);
@@ -321,10 +323,86 @@ public class MoviesApiTests(WebApplicationFactory<WeatherForecastController> fac
         Assert.Null(priorLink?.Role);
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, missingActor.StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missingMovie.StatusCode);
+        Assert.Equal(existingLink ? HttpStatusCode.NoContent : HttpStatusCode.Created, saved.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
         Assert.NotNull(after);
         Assert.Equal("Lead", Assert.Single(after.Actors, item => item.Id == actor.Id).Role);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("/details")]
+    public async Task MovieCastJsonIncludesOnlyAssignedRoles(string routeSuffix)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        var movie = await AddMovieWithRelationsAsync(app);
+        var actor = Assert.Single(movie.Actors);
+        var detailsRoute = $"{Route}/{movie.Id}{routeSuffix}";
+
+        // Act
+        var before = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
+        using var saved = await client.PostAsJsonAsync($"{Route}/{movie.Id}/actors/{actor.Id}", new { Role = "Lead" });
+        var after = await client.GetFromJsonAsync<JsonElement>(detailsRoute);
+        var actorJson = await client.GetFromJsonAsync<JsonElement>($"/api/actors/{actor.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, saved.StatusCode);
+        var castMember = Assert.Single(after.GetProperty("actors").EnumerateArray());
+        Assert.False(Assert.Single(before.GetProperty("actors").EnumerateArray()).TryGetProperty("role", out _));
+        Assert.Equal(actor.Id, castMember.GetProperty("id").GetInt32());
+        Assert.Equal(actor.Name, castMember.GetProperty("name").GetString());
+        Assert.Equal(actor.BirthYear, castMember.GetProperty("birthYear").GetInt32());
+        Assert.Equal("Lead", castMember.GetProperty("role").GetString());
+        Assert.Equal(ActorJsonProperties, actorJson.EnumerateObject().Select(property => property.Name).Order());
+    }
+
+    [Theory]
+    [InlineData("POST", "/api/actors", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
+    [InlineData("PUT", "/api/actors/1", """{"name":"","birthYear":0}""", "Name", "BirthYear")]
+    [InlineData("POST", "/api/movies/1/reviews", """{"reviewerName":"","rating":6}""", "ReviewerName", "Rating")]
+    public async Task InvalidRequestsReturnValidationErrors(
+        string method, string path, string json, string requiredField, string rangeField)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+        using var request = new HttpRequestMessage(new HttpMethod(method), path)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        // Act
+        using var response = await client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var errors = problem.GetProperty("errors");
+        Assert.True(errors.TryGetProperty(requiredField, out _));
+        Assert.True(errors.TryGetProperty(rangeField, out _));
+    }
+
+    [Theory]
+    [InlineData("/api/movies/1")]
+    [InlineData("/api/movies/1/reviews")]
+    [InlineData("/api/actors/1")]
+    public async Task GetMissingResourceReturnsNotFound(string path)
+    {
+        // Arrange
+        await using var connection = CreateConnection();
+        using var app = await CreateAppAsync(connection);
+        using var client = CreateClient(app);
+
+        // Act
+        using var response = await client.GetAsync(path);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private static SqliteConnection CreateConnection() => new("Data Source=:memory:;Foreign Keys=True");

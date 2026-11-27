@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
 using MovieApi.Extensions;
+using MovieApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<CastAssignmentService>();
 builder.Services.AddDbContext<MovieDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("MovieApi")

@@ -162,7 +162,8 @@ When implementing a feature:
 3. Follow existing project conventions.
 4. Add or update tests where appropriate.
 5. Build and run relevant tests when possible.
-6. Report what changed and any remaining issues.
+6. Update the relevant backlog Markdown file when implementing a tracked item. Record its status, check only verified acceptance criteria, and reference the implementation when useful. Include the backlog update in the same commit when making an atomic commit for the item.
+7. Report what changed and any remaining issues.
 
 Do not rewrite unrelated code or perform broad refactoring without justification.
 
