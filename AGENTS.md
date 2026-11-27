@@ -133,10 +133,16 @@ Do not overexplain basic programming concepts that I already understand.
 
 - Work on a non-`main` branch. Never make, commit, or push changes directly on `main`.
 - If you are already on a non-`main` branch, check whether its scope fits the task before creating another branch. Reuse a suitable branch for related work across multiple commits and development sessions.
-- Create a branch from an up-to-date `main` when starting work on `main` or when starting distinct or substantial work outside the current branch's scope.
+- When starting work on `main` or starting distinct or substantial work outside the current branch's scope, run `git fetch origin main`, then branch from the refreshed `origin/main` with `git switch --no-track -c <branch-name> origin/main`. The starting commit and the upstream used for push and pull are separate settings.
 - Treat `main` as protected: changes must reach it only through a reviewed pull request.
 - Never merge a feature branch locally into `main`, bypass branch protection, or push directly to `main`.
 - Keep each branch focused on a coherent feature, fix, documentation effort, or refactoring. Include related follow-up changes on the same branch.
+
+Before publishing or syncing:
+
+- Check `git status --short --branch` and `git branch -vv`. The upstream must be the same-named branch on `origin`, or unset before first publication. If it points to `origin/main` or another branch, remove it with `git branch --unset-upstream` while on the affected work branch.
+- On first publication, explicitly name the remote destination and set it as the upstream. For example, after verifying that the current branch is `refactor/sql-server`, run `git push --set-upstream origin HEAD:refs/heads/refactor/sql-server`. Verify the destination before running the command.
+- Use VS Code **Sync Changes** only after verifying the upstream is the same-named remote branch. Open a pull request with `main` as its base and the published work branch as its head.
 
 Use these branch naming conventions:
 
