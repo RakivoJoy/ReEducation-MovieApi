@@ -26,7 +26,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-10 | Document EF Core entities and mappings | 9 | 9 | 7 | 567 | Done |
 | DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Done |
 | DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Done |
-| DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Ready |
+| DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Ready |
 | DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Ready |
 | DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Ready |
@@ -161,8 +161,12 @@ Add `docs/architecture/database-erd.md` with a Mermaid ER diagram based on the S
 
 **Acceptance criteria**
 
-- [ ] Show `Movies`, `MovieDetails`, `Reviews`, `Actors`, and `MovieActor` with primary and foreign keys, relationship directions, and cardinalities.
-- [ ] Note the unique movie-details link, composite cast key, nullable role, and rating constraint alongside the diagram, with links to the schema and mapping.
+- [x] Show `Movies`, `MovieDetails`, `Reviews`, `Actors`, and `MovieActor` with primary and foreign keys, relationship directions, and cardinalities.
+- [x] Note the unique movie-details link, composite cast key, nullable role, and rating constraint alongside the diagram, with links to the schema and mapping.
+
+**Completion**
+
+Verified the cardinalities, keys, nullability, cascades, and rating constraint against the checked-in SQL Server schema.
 
 ### DOC-14 Draw the cast assignment UML sequence diagram
 
