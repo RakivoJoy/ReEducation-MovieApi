@@ -195,6 +195,8 @@ Add a short architecture entry point and update the Docs README and DocFX naviga
 
 Generated the DocFX site and checked that the overview, diagrams, API reference, and three guides were present.
 
+The [repository README](../README.md#documentation) now links directly to the DocFX site and the GitHub-rendered Mermaid diagrams.
+
 ### DOC-16 Review and organize agent instructions
 
 After the three reusable guides are drafted, review `AGENTS.md` for sections that would be easier to maintain as focused references. Keep repository-wide instructions readily visible.
