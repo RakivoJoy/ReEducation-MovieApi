@@ -1,5 +1,6 @@
 namespace MovieApi.Models;
 
+/// <summary>A catalog entry with optional details, reviews, and cast links.</summary>
 public class Movie
 {
     public int Id { get; set; }

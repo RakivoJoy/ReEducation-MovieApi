@@ -23,7 +23,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-07 | Document actor and review controller contracts | 8 | 9 | 7 | 504 | Done |
 | DOC-08 | Document request and response DTOs | 9 | 9 | 7 | 567 | Done |
 | DOC-09 | Document the cast assignment workflow | 9 | 9 | 7 | 567 | Done |
-| DOC-10 | Document EF Core entities and mappings | 9 | 9 | 7 | 567 | Ready |
+| DOC-10 | Document EF Core entities and mappings | 9 | 9 | 7 | 567 | Done |
 | DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Ready |
 | DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Ready |
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Ready |
@@ -122,8 +122,12 @@ Document the domain entities and `MovieDbContext` through XML comments and targe
 
 **Acceptance criteria**
 
-- [ ] Describe movie details, reviews, and cast links, including the join entity and the optional role.
-- [ ] Explain the relevant persistence constraints and link them to the context or schema. Leave generated migration source alone.
+- [x] Describe movie details, reviews, and cast links, including the join entity and the optional role.
+- [x] Explain the relevant persistence constraints and link them to the context or schema. Leave generated migration source alone.
+
+**Completion**
+
+Reviewed the comments against the EF mappings and SQL Server schema.
 
 ### DOC-11 Document application startup and demo seeding
 

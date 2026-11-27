@@ -3,6 +3,7 @@ using MovieApi.Models;
 
 namespace MovieApi.Data;
 
+/// <summary>Maps movies, details, reviews, actors, and cast links to SQL Server.</summary>
 public class MovieDbContext(DbContextOptions<MovieDbContext> options) : DbContext(options)
 {
     public DbSet<Movie> Movies => Set<Movie>();
@@ -11,6 +12,7 @@ public class MovieDbContext(DbContextOptions<MovieDbContext> options) : DbContex
     public DbSet<Actor> Actors => Set<Actor>();
     public DbSet<MovieActor> MovieActors => Set<MovieActor>();
 
+    /// <summary>Configures relationship cardinalities, budget precision, and database constraints.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MovieDetails>().Property(details => details.Budget).HasPrecision(19, 4);
@@ -22,6 +24,7 @@ public class MovieDbContext(DbContextOptions<MovieDbContext> options) : DbContex
 
         modelBuilder.Entity<Review>(review =>
         {
+            // Enforce the allowed range even when writes bypass API validation.
             review.ToTable(table => table.HasCheckConstraint("CK_Reviews_Rating", "[Rating] BETWEEN 1 AND 5"));
             review.HasOne(item => item.Movie)
                 .WithMany(movie => movie.Reviews)
