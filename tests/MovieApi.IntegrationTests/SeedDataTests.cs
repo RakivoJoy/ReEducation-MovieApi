@@ -68,6 +68,32 @@ public class SeedDataTests
         Assert.Equal("Amy Adams", sharedActor.Name);
     }
 
+    [Theory]
+    [InlineData("Development", false)]
+    [InlineData("Production", true)]
+    public async Task StartupSkipsMigrationsAndSeedingOutsideEnabledDevelopment(string environment, bool seedEnabled)
+    {
+        // Arrange
+        await using var testDatabase = new SqlServerTestDatabase();
+        await using var database = testDatabase.CreateContext();
+        await database.GetService<IRelationalDatabaseCreator>().CreateAsync();
+        using var factory = new WebApplicationFactory<WeatherForecastController>();
+        using var app = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(environment);
+            builder.UseSetting("SeedData:Enabled", seedEnabled.ToString());
+            builder.UseSetting("ConnectionStrings:MovieApi", testDatabase.ConnectionString);
+        });
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+
+        // Act
+        using var response = await client.GetAsync("/WeatherForecast");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        Assert.Empty(await database.Database.GetAppliedMigrationsAsync());
+    }
+
     private static async Task<MovieDto[]> StartAndReadCatalogAsync(SqlServerTestDatabase testDatabase)
     {
         using var factory = new WebApplicationFactory<WeatherForecastController>();

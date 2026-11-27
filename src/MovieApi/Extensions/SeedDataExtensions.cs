@@ -19,7 +19,11 @@ public static class SeedDataExtensions
         using var scope = app.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
         database.Database.Migrate();
+        SeedEmptyCatalog(database);
+    }
 
+    private static void SeedEmptyCatalog(MovieDbContext database)
+    {
         using var transaction = database.Database.BeginTransaction();
         // The transaction owns the lock so a second startup checks the catalog only after the first commits or rolls back.
         database.Database.ExecuteSqlRaw("""

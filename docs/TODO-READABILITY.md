@@ -12,7 +12,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Use the [
 | READ-02 | Separate cast assignment decisions from database writes | 9 | 9 | 7 | 567 | Done |
 | READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Done |
 | READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Done |
-| READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Ready |
+| READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Done |
 | READ-06 | Organize SQL Server API tests around the resources they exercise | 7 | 8 | 6 | 336 | Ready |
 
 ## Backlog items
@@ -75,8 +75,12 @@ In [SeedDataExtensions](../src/MovieApi/Extensions/SeedDataExtensions.cs), make 
 
 **Acceptance criteria**
 
-- [ ] The startup entry point makes it clear when it opens a scope, migrates, and attempts to seed the catalog.
-- [ ] The lock, empty-catalog check, and inserts remain in the same transaction. Verify concurrent startup and preservation of existing catalogs through the seed integration tests.
+- [x] The startup entry point makes it clear when it opens a scope, migrates, and attempts to seed the catalog.
+- [x] The lock, empty-catalog check, and inserts remain in the same transaction. Verify concurrent startup and preservation of existing catalogs through the seed integration tests.
+
+**Completion**
+
+Verified concurrent startup, preservation of existing movies, and that disabled development or production startup skips migrations and seeding.
 
 ### READ-06 Organize SQL Server API tests around the resources they exercise
 
