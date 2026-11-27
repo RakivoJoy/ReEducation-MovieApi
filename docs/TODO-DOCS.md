@@ -24,7 +24,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-08 | Document request and response DTOs | 9 | 9 | 7 | 567 | Done |
 | DOC-09 | Document the cast assignment workflow | 9 | 9 | 7 | 567 | Done |
 | DOC-10 | Document EF Core entities and mappings | 9 | 9 | 7 | 567 | Done |
-| DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Ready |
+| DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Done |
 | DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Ready |
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Ready |
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Ready |
@@ -135,8 +135,12 @@ Add concise comments to the startup and seed code where they explain decisions t
 
 **Acceptance criteria**
 
-- [ ] Comments explain the development startup conditions, the scoped database context, and when migrations run.
-- [ ] Comments explain how the SQL Server transaction lock and empty-catalog check protect seeding from concurrent startup and preserve existing data.
+- [x] Comments explain the development startup conditions, the scoped database context, and when migrations run.
+- [x] Comments explain how the SQL Server transaction lock and empty-catalog check protect seeding from concurrent startup and preserve existing data.
+
+**Completion**
+
+Reviewed the environment and configuration guards, scoped context, and transaction against the startup code.
 
 ### DOC-12 Draw the application UML class diagram
 
