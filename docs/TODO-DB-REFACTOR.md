@@ -8,7 +8,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Complete 
 
 | ID | Backlog item | Impact | Confidence | Ease | ICE | Status |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| DB-01 | Set up VS Code and provision SQL Server databases | 10 | 9 | 8 | 720 | In progress |
+| DB-01 | Set up VS Code and provision SQL Server databases | 10 | 9 | 8 | 720 | Done |
 | DB-02 | Switch the EF Core provider and create SQL Server migrations | 10 | 9 | 6 | 540 | Ready |
 | DB-03 | Port startup seeding and database error handling | 9 | 9 | 5 | 405 | Ready |
 | DB-04 | Run integration tests against SQL Server | 10 | 9 | 5 | 450 | Ready |
@@ -22,9 +22,19 @@ Use Windows Authentication against the existing instance. Save provisioning T-SQ
 
 **Acceptance criteria**
 
-- [ ] Confirm the Microsoft SQL Server extension (`ms-mssql.mssql`) is installed.
-- [ ] Authenticate to the local default instance with Windows Authentication.
-- [ ] Run the checked-in script twice and verify `MovieApiDev` and `MovieApiIntegrationTests` are online after both runs.
+- [x] Confirm the Microsoft SQL Server extension (`ms-mssql.mssql`) is installed.
+- [x] Authenticate to the local default instance with Windows Authentication.
+- [x] Run the checked-in script twice and verify `MovieApiDev` and `MovieApiIntegrationTests` are online after both runs.
+
+**Completion**
+
+Installed the Microsoft SQL Server extension (v1.48.0) and verified the [database provisioning script](../scripts/sql/create-movieapi-databases.sql) with two successful runs. Both databases reported `ONLINE` each time.
+
+From the repository root, run this against the local Windows instance using shared memory and Windows Authentication:
+
+```powershell
+sqlcmd -S lpc:localhost -E -C -b -i scripts/sql/create-movieapi-databases.sql
+```
 
 ### DB-02 Switch the EF Core provider and create SQL Server migrations
 
