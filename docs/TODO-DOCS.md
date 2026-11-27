@@ -25,7 +25,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-09 | Document the cast assignment workflow | 9 | 9 | 7 | 567 | Done |
 | DOC-10 | Document EF Core entities and mappings | 9 | 9 | 7 | 567 | Done |
 | DOC-11 | Document application startup and demo seeding | 8 | 9 | 7 | 504 | Done |
-| DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Ready |
+| DOC-12 | Draw the application UML class diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Ready |
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Ready |
 | DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Ready |
@@ -148,8 +148,12 @@ Add `docs/architecture/application-uml.md` with a Mermaid class diagram of the m
 
 **Acceptance criteria**
 
-- [ ] The diagram shows the main controllers, DTOs, cast assignment service, `MovieDbContext`, and domain entities, with dependency directions checked against the source.
-- [ ] An accompanying note explains the boundary between HTTP contracts and persistence models and links to the relevant source.
+- [x] The diagram shows the main controllers, DTOs, cast assignment service, `MovieDbContext`, and domain entities, with dependency directions checked against the source.
+- [x] An accompanying note explains the boundary between HTTP contracts and persistence models and links to the relevant source.
+
+**Completion**
+
+Reviewed type and dependency directions against the controller, DTO, service, and entity declarations.
 
 ### DOC-13 Draw the SQL Server entity-relationship diagram
 
