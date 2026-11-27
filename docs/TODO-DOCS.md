@@ -15,7 +15,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | ID | Backlog item | Impact | Confidence | Ease | ICE | Status |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | DOC-01 | Configure the DocFX site and API reference | 10 | 9 | 6 | 540 | Done |
-| DOC-02 | Generate DocFX through the `gen-docfx` PR label | 10 | 9 | 6 | 540 | In progress |
+| DOC-02 | Generate DocFX through the `gen-docfx` PR label | 10 | 9 | 6 | 540 | Done |
 | DOC-03 | Write a reusable DocFX guide | 8 | 9 | 8 | 576 | Done |
 | DOC-04 | Write a reusable C# comments guide | 9 | 9 | 8 | 648 | Done |
 | DOC-05 | Write a reusable Mermaid guide | 8 | 9 | 8 | 576 | Done |
@@ -48,10 +48,10 @@ After DOC-01, create the `gen-docfx` repository label and a standalone DocFX wor
 
 **Acceptance criteria**
 
-- [ ] Adding `gen-docfx` to an open PR starts the job. Opening, reopening, or updating a PR with the label also runs the job. An unlabeled PR and an unrelated label change skip generation.
-- [ ] A hosted labeled run uploads the generated HTML, and an unlabeled run shows DocFX skipped. The workflow runs independently of the `run-tests` label and uses read-only repository access.
+- [x] Adding `gen-docfx` to an open PR starts the job. Opening, reopening, or updating a PR with the label also runs the job. An unlabeled PR and an unrelated label change skip generation.
+- [x] A hosted labeled run uploads the generated HTML, and an unlabeled run shows DocFX skipped. The workflow runs independently of the `run-tests` label and uses read-only repository access.
 
-The workflow is implemented and the label exists on GitHub. Hosted artifact and skip verification remain open.
+The draft PR's [unlabeled run](https://github.com/RakivoJoy/ReEducation-MovieApi/actions/runs/45996360375) skipped generation. Adding `gen-docfx` triggered a [successful hosted run with the HTML artifact](https://github.com/RakivoJoy/ReEducation-MovieApi/actions/runs/45996420020). The remaining event conditions were reviewed against the workflow.
 
 ### DOC-03 Write a reusable DocFX guide
 
