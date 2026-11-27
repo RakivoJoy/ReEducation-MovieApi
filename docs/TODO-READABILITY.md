@@ -13,7 +13,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Use the [
 | READ-03 | Clarify movie write paths and concurrency handling | 8 | 9 | 8 | 576 | Done |
 | READ-04 | Clarify review collection and creation behavior | 8 | 9 | 8 | 576 | Done |
 | READ-05 | Separate startup setup from the seed transaction | 8 | 9 | 8 | 576 | Done |
-| READ-06 | Organize SQL Server API tests around the resources they exercise | 7 | 8 | 6 | 336 | Ready |
+| READ-06 | Organize SQL Server API tests around the resources they exercise | 7 | 8 | 6 | 336 | Done |
 
 ## Backlog items
 
@@ -88,8 +88,12 @@ After the production refactors, split the mixed [MoviesApiTests](../tests/MovieA
 
 **Acceptance criteria**
 
-- [ ] Readers can find movie, actor, review, and cast scenarios by test class and follow Arrange–Act–Assert without tracing unrelated setup.
-- [ ] Preserve all current production behavior checks, including the SQL Server race tests, and verify the full solution suite against SQL Server.
+- [x] Readers can find movie, actor, review, and cast scenarios by test class and follow Arrange–Act–Assert without tracing unrelated setup.
+- [x] Preserve all current production behavior checks, including the SQL Server race tests, and verify the full solution suite against SQL Server.
+
+**Completion**
+
+Separated movie, actor, review, and cast tests and kept shared error scenarios together. The shared host keeps each SQL Server database isolated. Added a missing-actor update case and verified the full Release suite.
 
 ## Implementation boundaries
 
