@@ -60,7 +60,7 @@ After DB-02, update empty-catalog seeding and the SQLite-specific exception hand
 
 **Completion**
 
-[Startup tests](../tests/MovieApi.IntegrationTests/SeedDataTests.cs) start two hosts against the same provisioned database. [API tests](../tests/MovieApi.IntegrationTests/MoviesApiTests.cs) force actual SQL Server constraint failures by inserting a competing cast link or deleting the movie before the review insert. The API returns 409 and 404 respectively.
+[Startup tests](../tests/MovieApi.IntegrationTests/SeedDataTests.cs) start two hosts against the same provisioned database. [API error tests](../tests/MovieApi.IntegrationTests/ApiErrorTests.cs) force actual SQL Server constraint failures by inserting a competing cast link or deleting the movie before the review insert. The API returns 409 and 404 respectively.
 
 ### DB-04 Run integration tests against SQL Server
 

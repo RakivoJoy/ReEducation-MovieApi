@@ -20,9 +20,13 @@ public class ReviewsController(MovieDbContext context) : ControllerBase
     [HttpGet("api/movies/{movieId:int}/reviews")]
     public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews(int movieId, CancellationToken cancellationToken)
     {
-        var reviews = await context.Movies.Where(movie => movie.Id == movieId)
-            .Select(movie => movie.Reviews.OrderBy(review => review.Id)
-                .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating)).ToList())
+        // Starting from the movie gives null for a missing movie and an empty list for a movie with no reviews.
+        var reviews = await context.Movies
+            .Where(movie => movie.Id == movieId)
+            .Select(movie => movie.Reviews
+                .OrderBy(review => review.Id)
+                .Select(review => new ReviewDto(review.Id, review.ReviewerName, review.Comment, review.Rating))
+                .ToList())
             .SingleOrDefaultAsync(cancellationToken);
 
         return reviews is null ? NotFound() : reviews;
@@ -37,7 +41,7 @@ public class ReviewsController(MovieDbContext context) : ControllerBase
     public async Task<ActionResult<ReviewDto>> PostReview(
         int movieId, ReviewCreateDto request, CancellationToken cancellationToken)
     {
-        if (!await context.Movies.AnyAsync(movie => movie.Id == movieId, cancellationToken))
+        if (!await MovieExistsAsync(movieId, cancellationToken))
         {
             return NotFound();
         }
@@ -58,13 +62,13 @@ public class ReviewsController(MovieDbContext context) : ControllerBase
         catch (DbUpdateException exception) when (
             exception.InnerException is SqlException { Number: SqlServerConstraintViolation })
         {
-            // The movie foreign key is enforced even when a delete races this insert.
-            if (!await context.Movies.AnyAsync(movie => movie.Id == movieId, cancellationToken))
+            // SQL Server uses error 547 for both the movie foreign key and constraints such as the rating check.
+            if (await MovieExistsAsync(movieId, cancellationToken))
             {
-                return NotFound();
+                throw;
             }
 
-            throw;
+            return NotFound();
         }
 
         return CreatedAtAction(nameof(GetReview), new { id = review.Id },
@@ -95,4 +99,7 @@ public class ReviewsController(MovieDbContext context) : ControllerBase
         var deleted = await context.Reviews.Where(review => review.Id == id).ExecuteDeleteAsync(cancellationToken);
         return deleted == 0 ? NotFound() : NoContent();
     }
+
+    private Task<bool> MovieExistsAsync(int movieId, CancellationToken cancellationToken) =>
+        context.Movies.AnyAsync(movie => movie.Id == movieId, cancellationToken);
 }
