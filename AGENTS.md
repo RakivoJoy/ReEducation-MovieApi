@@ -246,6 +246,12 @@ This file contains general development preferences.
 
 If a project has additional requirements, follow its README, project documentation, existing code conventions and more specific AGENT.md files.
 
+### Documentation guides
+
+- Follow the [DocFX guide](docs/guides/docfx.md) when adding documentation pages, API cross-references, or site navigation.
+- Follow the [C# comments guide](docs/guides/csharp-comments.md) when adding XML documentation or explanatory comments.
+- Follow the [Mermaid guide](docs/guides/mermaid.md) when adding or updating diagrams.
+
 When project requirements conflict, identify the conflict rather than silently choosing an interpretation.
 
 Always prioritize correctness, maintainability, simplicity and understanding.

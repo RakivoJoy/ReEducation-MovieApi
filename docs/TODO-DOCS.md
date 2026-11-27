@@ -29,7 +29,7 @@ Score Impact, Confidence, and Ease from 1 to 10. ICE is their product. Start wit
 | DOC-13 | Draw the SQL Server entity-relationship diagram | 9 | 9 | 7 | 567 | Done |
 | DOC-14 | Draw the cast assignment UML sequence diagram | 7 | 9 | 7 | 441 | Done |
 | DOC-15 | Write the architecture overview and organize navigation | 8 | 9 | 7 | 504 | Done |
-| DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Ready |
+| DOC-16 | Review and organize agent instructions | 7 | 8 | 7 | 392 | Done |
 
 ## Backlog items
 
@@ -200,5 +200,9 @@ After the three reusable guides are drafted, review `AGENTS.md` for sections tha
 
 **Acceptance criteria**
 
-- [ ] Link from `AGENTS.md` to the DocFX, comments, and Mermaid guides where appropriate. Move existing material only if it has a clear home and is still discoverable when its instructions apply.
-- [ ] Preserve the Git, approval, testing, and learning policies. Record the rationale if the root file is clearer with the remaining material kept together.
+- [x] Link from `AGENTS.md` to the DocFX, comments, and Mermaid guides where appropriate. Move existing material only if it has a clear home and is still discoverable when its instructions apply.
+- [x] Preserve the Git, approval, testing, and learning policies. Record the rationale if the root file is clearer with the remaining material kept together.
+
+**Completion**
+
+Linked each guide at the point of use. Kept the remaining instructions in AGENTS.md because Git, approval, testing, and learning policies apply across the repository and are easier to find together.
